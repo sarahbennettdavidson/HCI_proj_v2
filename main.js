@@ -142,10 +142,9 @@ function render() {
   gl.clearColor(0, 0, 0, 1);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  cubeRotY += yRotSpeed * 0.01;
-  cubeRotX += xRotSpeed * 0.01;
-  cubeRotZ += zRotSpeed * 0.01;
-
+  //cubeRotY += yRotSpeed * 0.01;
+  //cubeRotX += xRotSpeed * 0.01;
+  //cubeRotZ += zRotSpeed * 0.01;
 
   // rotation matrices
   let cx = Math.cos(cubeRotY), sx = Math.sin(cubeRotY);
