@@ -47,32 +47,8 @@ Press F12 to see the console for debugging.</p>
     <div>
       <canvas id="glcanvas" width="400" height="400"></canvas>
 
-      <div style="max-height: 150px; overflow-y: auto; width: 400px;">
-      <div style="display: flex; gap: 20px;">
-        <div>
-          <label>Rotate X <input type="range" id="xRotSlider" min="-5" max="5" step="0.1" value="0"></label><br>
-          <label>Rotate Y <input type="range" id="YRotSlider" min="-5" max="5" step="0.1" value="0"></label><br>
-          <label>Rotate Z <input type="range" id="zRotSlider" min="-5" max="5" step="0.1" value="0"></label><br>
-          <label>Shear X <input type="range" id="xShearSlider" min="0" max="1" step="0.1" value="0"></label><br>
-          <label>Shear Y <input type="range" id="yShearSlider" min="0" max="1" step="0.1" value="0"></label><br>
-          <label>Shear Z <input type="range" id="zShearSlider" min="0" max="1" step="0.1" value="0"></label>
-        </div>
-          <label>Distance <input type="range" id="distSlider" min="-3" max="3" step="0.01" value="1.0"></label>
-        <div style="display: flex; flex-direction: column; gap: 5px;">
-          <button id="shapeBtn">Cube</button>
-          <button id="patternBtn">Checks</button>
-        </div>
-      </div>
-
-       <label>patternSize <input type="range" id="patternSizeSlider" min="2" max="20" step="0.1" value="4"></label><br>
-      <label>blur <input type="range" id="blurSlider" min="0.001" max="0.333" step="0.001" value="0"></label><br>
-      <label>Angle <input type="range" id="angleSlider" min="0.00" max="6.283185" step="0.001" value="0"></label>
       <div>
-        https://iquilezles.org/articles/palettes/<br>
-
-        <label>t <input type="range" id="paletteTSlider" min="0" max="1" step="0.01" value="0.5"></label>
-      </div>
-      <div id="paletteSliders" style="display: flex; gap: 10px;"></div>
+        <button id="patternBtn">Checks</button>
       </div>
     </div>
   </div>
@@ -201,52 +177,16 @@ fragColor = vec4(fc, 1.0);
     fragEditor.value = document.getElementById("fragment-shader").textContent;
 
     let program, posLoc, colorLoc, timeLoc, uMVM, uPM, uMTM, uvLoc;
-    let vbo, nbo, ibo, uvbo;
 
-    let shapeCounter = 0;
-    const shapeNames = ["Cube", "Pyramid", "Sphere"];
-    let shape = shapeNames[0];
-    let shapeIndexCount = 0;
     let patternCounter = 0;
     const patternNames = ["Checks", "Stripes", "Dots"];
     let patternID = patternCounter%patternNames.length;
-    let shapeID = shapeCounter%shapeNames.length;
     let pattern = patternNames[0];
     let a1 = Math.random();
     let a2 = Math.random();
     let a3 = Math.random();
 
-
-    // Buffers
-    function initBuffers() {
-      let pos, col, idx, uv;
-      if (shape === "Cube") {
-        pos = cubePos; col = cubeColors; idx = cubeIndices; uv = cubeUVs;
-      } else if (shape === "Pyramid") {
-        pos = pyramidPos; col = pyramidColors; idx = pyramidIndices; uv = pyramidUVs;
-      } else {
-        pos = spherePos; col = sphereColors; idx = sphereIndices; uv = sphereUVs;
-      }
-      indexCount = idx.length;
-
-      vbo = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-      gl.bufferData(gl.ARRAY_BUFFER, pos, gl.STATIC_DRAW);
-
-      nbo = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, nbo);
-      gl.bufferData(gl.ARRAY_BUFFER, col, gl.STATIC_DRAW);
-
-      uvbo = gl.createBuffer();//
-      gl.bindBuffer(gl.ARRAY_BUFFER, uvbo);
-      gl.bufferData(gl.ARRAY_BUFFER, uv, gl.STATIC_DRAW);
-
-      ibo = gl.createBuffer();
-      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
-      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, idx, gl.STATIC_DRAW);
-    }
-    initBuffers();
-     // buffers for every shape, made once
+    // cube buffers, made once
     function makeShapeBuffers(pos, col, uv, idx) {
       const b = {};
 
@@ -270,9 +210,7 @@ fragColor = vec4(fc, 1.0);
       return b;
     }
 
-    const cubeBuffers    = makeShapeBuffers(cubePos, cubeColors, cubeUVs, cubeIndices);
-    const pyramidBuffers = makeShapeBuffers(pyramidPos, pyramidColors, pyramidUVs, pyramidIndices);
-    const sphereBuffers  = makeShapeBuffers(spherePos, sphereColors, sphereUVs, sphereIndices);
+    const cubeBuffers = makeShapeBuffers(cubePos, cubeColors, cubeUVs, cubeIndices);
 
     // draw one shape with one model matrix
     function drawShape(b, matrix) {
@@ -340,87 +278,21 @@ fragColor = vec4(fc, 1.0);
       }
     });
 
-    const yRotSlider = document.getElementById("YRotSlider");
-    const xRotSlider = document.getElementById("xRotSlider");
-    const zRotSlider = document.getElementById("zRotSlider");
-
-    const xShearSlider = document.getElementById("xShearSlider");
-    let xShear = parseFloat(xShearSlider.value);
-    xShearSlider.addEventListener("input", () => { xShear = parseFloat(xShearSlider.value); });
-
-    const yShearSlider = document.getElementById("yShearSlider");
-    let yShear = parseFloat(yShearSlider.value);
-    yShearSlider.addEventListener("input", () => { yShear = parseFloat(yShearSlider.value); });
-
-    const zShearSlider = document.getElementById("zShearSlider");
-    let zShear = parseFloat(zShearSlider.value);
-    zShearSlider.addEventListener("input", () => { zShear = parseFloat(zShearSlider.value); });    
-    
-    const distSlider = document.getElementById("distSlider");
-    let dist = parseFloat(distSlider.value);
-    distSlider.addEventListener("input", () => { dist = parseFloat(distSlider.value); });
-
-    const cubeDir    = [ 1.0, 0.0,  0.0  ];
-    const pyramidDir = [-0.5, 0.0,  0.866];
-    const sphereDir  = [-0.5, 0.0, -0.866];
-
 //put palette values here
 
     const paletteValues = new Float32Array([0.5, 0.5, 0.5,   0.5, 0.5, 0.5,   1, 1, 1,   0, 0.33, 0.67]);
-    const paletteDiv = document.getElementById("paletteSliders");
-    const paletteGroups = ["a", "b", "c", "d"];
-    const paletteChannels = ["r", "g", "b"];
-
-    for (let g = 0; g < 4; g++) {
-      const block = document.createElement("div");
-      block.textContent = paletteGroups[g];
-
-      for (let c = 0; c < 3; c++) {
-        const i = g * 3 + c;   // position in paletteValues
-
-        const label = document.createElement("label");
-        label.textContent = paletteChannels[c] + " ";
-
-        const s = document.createElement("input");
-        s.type = "range"; s.min = 0; s.max = 2; s.step = 0.01; s.value = paletteValues[i];
-        s.style.width = "70px";
-        s.addEventListener("input", () => { paletteValues[i] = parseFloat(s.value); });
-
-        label.appendChild(s);
-        block.appendChild(document.createElement("br"));
-        block.appendChild(label);
-      }
-
-      paletteDiv.appendChild(block);
-    }
-        const paletteTSlider = document.getElementById("paletteTSlider");
-        let paletteT = parseFloat(paletteTSlider.value);
-        paletteTSlider.addEventListener("input", () => { paletteT = parseFloat(paletteTSlider.value); });
-
-        const patternSizeSlider = document.getElementById("patternSizeSlider");
-        let patternSize = parseFloat(patternSizeSlider.value);
-        patternSizeSlider.addEventListener("input", () => { patternSize = parseFloat(patternSizeSlider.value); });
-
-        const blurSlider = document.getElementById("blurSlider");
-        let blur = parseFloat(blurSlider.value);
-        blurSlider.addEventListener("input", () => { blur = parseFloat(blurSlider.value); });
-
-        const angleSlider = document.getElementById("angleSlider");
-        let patternRot = parseFloat(angleSlider.value);
-        angleSlider.addEventListener("input", () => { patternRot = parseFloat(angleSlider.value); });
+    const paletteT = 0.5;
+    const patternSize = 4;
+    const blur = 0.001;
+    const patternRot = 0;
+    const xRotSpeed = 0;
+    const yRotSpeed = 0;
+    const zRotSpeed = 0;
 
 
     const aspect = canvas.width / canvas.height;
     let proj = ortho(-2.5 * aspect, 2.5 * aspect, -2.5, 2.5, 0.1, 100);
     
-
-    const shapeBtn = document.getElementById("shapeBtn");
-    shapeBtn.addEventListener("click", () => {
-      shapeCounter++;
-      shapeID = shapeCounter % shapeNames.length
-      shape = shapeNames[shapeID];
-      shapeBtn.textContent = shape;
-});
 
 const patternBtn = document.getElementById("patternBtn");
     patternBtn.addEventListener("click", () => {
@@ -437,9 +309,9 @@ const patternBtn = document.getElementById("patternBtn");
       gl.clearColor(0, 0, 0, 1);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-      cubeRotY += parseFloat(yRotSlider.value) * 0.01;
-      cubeRotX += parseFloat(xRotSlider.value) * 0.01;
-      cubeRotZ += parseFloat(zRotSlider.value) * 0.01;
+      cubeRotY += yRotSpeed * 0.01;
+      cubeRotX += xRotSpeed * 0.01;
+      cubeRotZ += zRotSpeed * 0.01;
 
 
       // rotation matrices
@@ -462,15 +334,6 @@ const patternBtn = document.getElementById("patternBtn");
       let deltaTime = Date.now() - startTime;
       // object rotation
       modelTransformationMatrix = multiplyMat4(modelTransformationMatrix, cubeRotation);
-       //shearing
-      let amt = Math.abs(Math.sin(deltaTime / 1000));
-      let xShearAmt = xShear * amt;
-      let yShearAmt = yShear * amt;
-      let zShearAmt = zShear * amt;
-
-      modelTransformationMatrix = mat4ShearX(modelTransformationMatrix, xShearAmt);
-      modelTransformationMatrix = mat4ShearY(modelTransformationMatrix, yShearAmt);
-      modelTransformationMatrix = mat4ShearZ(modelTransformationMatrix, zShearAmt);
       // camera translation
       modelViewMatrix = mat4Translate(modelViewMatrix, [camX, camY, camZ]);
       
@@ -488,21 +351,7 @@ const patternBtn = document.getElementById("patternBtn");
       gl.uniform1f(gl.getUniformLocation(program, "patternRot"), patternRot);
 
 
-      //main shape
-      let mainBuffers;
-      if (shape === "Cube") mainBuffers = cubeBuffers;
-      else if (shape === "Pyramid") mainBuffers = pyramidBuffers;
-      else mainBuffers = sphereBuffers;
-
-            // orbiters: one of each shape, circling the main shape
-      let orbitAngle = deltaTime / 1000;
-      let orbitBase = mat4RotateY(cubeRotation, orbitAngle);
-
-      drawShape(cubeBuffers,    mat4Scale(mat4Translate(orbitBase, [cubeDir[0] * dist,    cubeDir[1] * dist,    cubeDir[2] * dist]),    [0.4, 0.4, 0.4]));
-      drawShape(pyramidBuffers, mat4Scale(mat4Translate(orbitBase, [pyramidDir[0] * dist, pyramidDir[1] * dist, pyramidDir[2] * dist]), [0.4, 0.4, 0.4]));
-      drawShape(sphereBuffers,  mat4Scale(mat4Translate(orbitBase, [sphereDir[0] * dist,  sphereDir[1] * dist,  sphereDir[2] * dist]),  [0.4, 0.4, 0.4]));
-
-      drawShape(mainBuffers, modelTransformationMatrix);
+      drawShape(cubeBuffers, modelTransformationMatrix);
     }
 
     // Initialize when page loads
