@@ -1,4 +1,5 @@
 //main.js
+
 function createShader(gl, type, source) {
   let shader = gl.createShader(type);
   gl.shaderSource(shader, source);
@@ -179,7 +180,10 @@ function render() {
   gl.uniform3fv(gl.getUniformLocation(program, "flatColor"), flatColor);
 
 
-  drawShape(cubeBuffers, modelTransformationMatrix);
+  // two cubes, offset left and right in x
+  const cubeOffsetX = 2.5;
+  drawShape(cubeBuffers, multiplyMat4(mat4Translate(mat4Identity(), [-cubeOffsetX, 0, 0]), modelTransformationMatrix));
+  drawShape(cubeBuffers, multiplyMat4(mat4Translate(mat4Identity(), [ cubeOffsetX, 0, 0]), modelTransformationMatrix));
 }
 
 // Initialize when page loads
