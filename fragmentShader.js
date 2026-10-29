@@ -1,4 +1,3 @@
-//fragmentShader.js
 const fragmentShaderSource = `#version 300 es
 precision mediump float;
 in vec3 vPos;//to get color placements from vertex shader
@@ -6,14 +5,16 @@ in vec2 vUV;
 flat in int faceIndex;
 
 uniform int patternNum[6]; // one pattern per face
-uniform vec3 paletteParams[4];
-uniform float paletteT;
-uniform float patternSize;
-uniform float blur;
-uniform float patternRot;
-uniform float warpScale;   // warp amplitude, in UV units
-uniform float warpTiling;  // sine waves per UV unit
-uniform vec3 flatColor;    // rgb for the flat pattern
+
+// parameters, one set per pattern (indexed by pattern index 0..5)
+uniform vec3 paletteParamsList[24]; // 4 per pattern: a, b, c, d
+uniform float paletteTList[6];
+uniform float patternSizeList[6];
+uniform float blurList[6];
+uniform float patternRotList[6];
+uniform float warpScaleList[6];     // warp amplitude, in UV units
+uniform float warpTilingList[6];    // sine waves per UV unit
+uniform vec3 flatColorList[6];      // rgb for the flat pattern
 
 out vec4 fragColor;
 
@@ -36,6 +37,20 @@ vec2 rotate2D(vec2 posit, float ang){
     return fract(p);
 }
 void main() {
+  // this face's pattern, and that pattern's parameters
+  int pattern = patternNum[faceIndex];
+  vec3 paletteParams[4] = vec3[4](paletteParamsList[pattern * 4 + 0],
+                                  paletteParamsList[pattern * 4 + 1],
+                                  paletteParamsList[pattern * 4 + 2],
+                                  paletteParamsList[pattern * 4 + 3]);
+  float paletteT    = paletteTList[pattern];
+  float patternSize = patternSizeList[pattern];
+  float blur        = blurList[pattern];
+  float patternRot  = patternRotList[pattern];
+  float warpScale   = warpScaleList[pattern];
+  float warpTiling  = warpTilingList[pattern];
+  vec3 flatColor    = flatColorList[pattern];
+
   vec2 uv = vUV;
   float ang = patternRot;   // 45 degrees
   uv -= 0.5;
