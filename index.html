@@ -11,14 +11,6 @@
       font-family: monospace;
     }
 
-    textarea {
-      background: #222;
-      color: #0f0;
-      font: 14px monospace;
-      width: 400px;
-      height: 250px;
-    }
-
     canvas {
       border: 1px solid #444;
     }
@@ -39,16 +31,6 @@ Reset to face front again.<br>
 When you run out of tries, you lose!.</p>
 
   <div style="display: flex; gap: 10px; align-items: flex-start;">
-    <div style="display: flex; flex-direction: column; gap: 10px;">
-      <div>
-        <b>Vertex Shader</b><br>
-        <textarea id="vertEditor"></textarea>
-      </div>
-      <div>
-        <b>Fragment Shader</b><br>
-        <textarea id="fragEditor"></textarea>
-      </div>
-    </div>
     <div>
       <canvas id="glcanvas" width="400" height="400"></canvas>
 
@@ -176,10 +158,8 @@ fragColor = vec4(fc, 1.0);
     const gl = canvas.getContext("webgl2");
     if (!gl) alert("WebGL2 not supported");
 
-    let vertEditor = document.getElementById("vertEditor");
-    let fragEditor = document.getElementById("fragEditor");
-    vertEditor.value = document.getElementById("vertex-shader").textContent;
-    fragEditor.value = document.getElementById("fragment-shader").textContent;
+    const vertSource = document.getElementById("vertex-shader").textContent;
+    const fragSource = document.getElementById("fragment-shader").textContent;
 
     let program, posLoc, colorLoc, timeLoc, uMVM, uPM, uMTM, uvLoc;
 
@@ -239,7 +219,7 @@ fragColor = vec4(fc, 1.0);
 
     function initShaderProgram() {
       try {
-        program = createProgram(gl, vertEditor.value, fragEditor.value);
+        program = createProgram(gl, vertSource, fragSource);
         gl.useProgram(program);
         posLoc = gl.getAttribLocation(program, "aPosition");
         colorLoc = gl.getAttribLocation(program, "aColor");
@@ -253,8 +233,6 @@ fragColor = vec4(fc, 1.0);
       } catch (e) { console.error(e); }
     }
     initShaderProgram();
-    vertEditor.onkeyup = initShaderProgram;
-    fragEditor.onkeyup = initShaderProgram;
 
     // Mouse and keyboard interactions
     let mouseDown = false, lastX, lastY, cubeRotX = 0, cubeRotY = 0, cubeRotZ = 0;
