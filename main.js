@@ -93,7 +93,8 @@ function initShaderProgram() {
 }
 initShaderProgram();
 
-let cubeRotX = 0, cubeRotY = 0, cubeRotZ = 0;
+// [x, y, z] rotation per cube: 0 = left cube, 1 = right cube
+const cubeRots = [[0, 0, 0], [0, 0, 0]];
 let camX = 0, camY = 0, camZ = -6;
 
 //put palette values here
@@ -118,8 +119,8 @@ let proj = ortho(-2.5 * aspect, 2.5 * aspect, -2.5, 2.5, 0.1, 100);
 const spinBtn = document.getElementById("spinBtn");
 
 function spin() {
-  spinBtn.disabled = true;           // disabled while the rotation runs
-  randomRot(500).then(() => { spinBtn.disabled = false; });
+  spinBtn.disabled = true;           // disabled until both cubes finish
+  Promise.all([randomRot(0, 500), randomRot(1, 500)]).then(() => { spinBtn.disabled = false; });
 }
 
 function front() {
@@ -127,15 +128,16 @@ function front() {
 }
 
 //rotation animation function. can be triggered once or repeatedly so neeeds to report it's completed.
-// Rotates the cube 90 degrees around a random axis (x, y or z) in a random direction.
+// Rotates one cube (0 = left, 1 = right) 90 degrees around a random axis (x, y or z) in a random direction.
 // duration is in milliseconds. Returns a Promise that resolves with { axis, sign } when done.
-function randomRot(duration) {
+function randomRot(cubeIndex, duration) {
+  const rot = cubeRots[cubeIndex];
   const axisIndex = Math.floor(Math.random() * 3);   // 0 = x, 1 = y, 2 = z
   const sign = Math.sign(Math.random() * 2 - 1);      // direction: -1 or 1
   const axis = [0, 0, 0];
   axis[axisIndex] = sign;                             // e.g. [0, -1, 0]
 
-  const start = [cubeRotX, cubeRotY, cubeRotZ];
+  const start = [rot[0], rot[1], rot[2]];
   const total = Math.PI / 2;                          // 90 degrees in radians
   let t0 = null;
 
@@ -149,15 +151,24 @@ function randomRot(duration) {
       const tEased = 1 - Math.sqrt(1 - t * t);        // circular ease-in, 0..1
       const ang = tEased * total;
 
-      cubeRotX = start[0] + axis[0] * ang;
-      cubeRotY = start[1] + axis[1] * ang;
-      cubeRotZ = start[2] + axis[2] * ang;
+      rot[0] = start[0] + axis[0] * ang;
+      rot[1] = start[1] + axis[1] * ang;
+      rot[2] = start[2] + axis[2] * ang;
 
       if (t < 1) requestAnimationFrame(step);
       else resolve({ axis: axisIndex, sign: sign });
     }
     requestAnimationFrame(step);
   });
+}
+
+// model matrix for one cube: translate by offsetX, then rotate Y, X, Z (T * Ry * Rx * Rz)
+function cubeModelMatrix(offsetX, rot) {
+  let m = mat4Translate(mat4Identity(), [offsetX, 0, 0]);
+  m = mat4RotateY(m, rot[1]);
+  m = mat4RotateX(m, rot[0]);
+  m = mat4RotateZ(m, rot[2]);
+  return m;
 }
 
 document.getElementById("spinBtn").addEventListener("click", spin);
@@ -170,31 +181,17 @@ function render() {
   gl.clearColor(0, 0, 0, 1);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  cubeRotY += yRotSpeed * 0.01;
-  cubeRotX += xRotSpeed * 0.01;
-  cubeRotZ += zRotSpeed * 0.01;
-
-
-  // rotation matrices
-  let cx = Math.cos(cubeRotY), sx = Math.sin(cubeRotY);
-  let cy = Math.cos(cubeRotX), sy = Math.sin(cubeRotX);
-  let cz = Math.cos(cubeRotZ), sz = Math.sin(cubeRotZ);
-
-  let rotX = [1, 0, 0, 0, 0, cy, sy, 0, 0, -sy, cy, 0, 0, 0, 0, 1];
-  let rotY = [cx, 0, -sx, 0, 0, 1, 0, 0, sx, 0, cx, 0, 0, 0, 0, 1];
-  let rotZ = [cz, sz, 0, 0, -sz, cz, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
-
-  let cubeRotation = multiplyMat4(multiplyMat4(rotY, rotX), rotZ);
+  for (const rot of cubeRots) {
+    rot[1] += yRotSpeed * 0.01;
+    rot[0] += xRotSpeed * 0.01;
+    rot[2] += zRotSpeed * 0.01;
+  }
 
   // init model-view matrix as identity matrix
   let modelViewMatrix = mat4Identity();
-  // init model transformation matrix as identity matrix
-  let modelTransformationMatrix = mat4Identity();
 
   //delta time in ms
   let deltaTime = Date.now() - startTime;
-  // object rotation
-  modelTransformationMatrix = multiplyMat4(modelTransformationMatrix, cubeRotation);
   // camera translation
   modelViewMatrix = mat4Translate(modelViewMatrix, [camX, camY, camZ]);
   
@@ -215,10 +212,10 @@ function render() {
   gl.uniform3fv(gl.getUniformLocation(program, "flatColor"), flatColor);
 
 
-  // two cubes, offset left and right in x
+  // two cubes, offset left and right in x, each with its own rotation
   const cubeOffsetX = 2.5;
-  drawShape(cubeBuffers, multiplyMat4(mat4Translate(mat4Identity(), [-cubeOffsetX, 0, 0]), modelTransformationMatrix));
-  drawShape(cubeBuffers, multiplyMat4(mat4Translate(mat4Identity(), [ cubeOffsetX, 0, 0]), modelTransformationMatrix));
+  drawShape(cubeBuffers, cubeModelMatrix(-cubeOffsetX, cubeRots[0]));
+  drawShape(cubeBuffers, cubeModelMatrix( cubeOffsetX, cubeRots[1]));
 }
 
 // Initialize when page loads
