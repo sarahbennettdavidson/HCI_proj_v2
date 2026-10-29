@@ -148,8 +148,8 @@ function randomRot(cubeIndex, duration) {
       if (duration > 0) {
         t = Math.min((now - t0) / duration, 1);
       }
-      //const tEased = 1 - Math.sqrt(1 - t * t); 
-      const tEased = 1 - Math.sqrt(1 - Math.pow(1 - t. 2));        // circular ease-in, 0..1  sqrt(1 - Math.pow(1 - x. 2))
+      const tEased = 1 - Math.sqrt(1 - t * t); 
+      //const tEased = 1 - Math.sqrt(1 - Math.pow(1 - t. 2));        // circular ease-in, 0..1  sqrt(1 - Math.pow(1 - x. 2))
       const ang = tEased * total;
 
       rot[0] = start[0] + axis[0] * ang;
