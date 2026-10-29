@@ -1,48 +1,3 @@
-// The perspective matrix is built as a product of three factors:
-//
-//     M_per = M_orth * P * F
-//
-//   M_orth: Normalization from box to cube [l,r][b,t][n,f] -> [-1,1]^3
-//   P: Perspective warping, from frustum to box
-//   F: z-axis flip.
-
-
-// Warpping the frustum into the box [l,r][b,t][n,f]
-//   [ n  0   0    0  ]
-//   [ 0  n   0    0  ]
-//   [ 0  0  f+n  -fn ]
-//   [ 0  0   1    0  ]
-function frustum2Box(near, far) {
-    return new Float32Array([
-        near, 0, 0, 0,
-        0, near, 0, 0,
-        0, 0, far + near, 1,
-        0, 0, -far * near, 0
-    ]);
-}
-
-// mapping box [l,r][b,t][n,f] onto the normalized cube [-1,1]^3.
-//   [ 2/(r-l)    0        0      -(r+l)/(r-l) ]
-//   [    0    2/(t-b)     0      -(t+b)/(t-b) ]
-//   [    0       0     2/(f-n)   -(f+n)/(f-n) ]
-//   [    0       0        0            1      ]
-function box2Cube(left, right, bottom, top, near, far) {
-    const rl = 1 / (right - left), tb = 1 / (top - bottom), fn = 1 / (far - near);
-    return new Float32Array([
-        2 * rl, 0, 0, 0,
-        0, 2 * tb, 0, 0,
-        0, 0, 2 * fn, 0,
-        -(right + left) * rl, -(top + bottom) * tb, -(far + near) * fn, 1
-    ]);
-}
-
-//Camera Looks down -z, near/far passed as positive distances into the
-//+z-forward convention P and M_orth are written in
-function flipZ() {
-    return new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1]);
-}
-
-
 // Matrix multiplication
 function multiplyMat4(a, b) {
     let r = new Float32Array(16);
@@ -60,21 +15,6 @@ function multiplyMat4(a, b) {
 // JavaScript has no operator overloading, GLSL does overload `*` for mat4
 function matMul(...matrices) {
     return matrices.reduce(multiplyMat4);
-}
-
-// General perspective frustum
-function frustum(left, right, bottom, top, near, far) {
-    const M_orth = box2Cube(left, right, bottom, top, near, far);
-    const P      = frustum2Box(near, far);
-    const F      = flipZ();
-    return matMul(M_orth, P, F);        // M_per = M_orth * Perspective Warping * FlipZ
-}
-
-// Symmetric frustum from vertical field of view. fov in radians.
-function perspective(fov, aspect, near, far) {
-    const top = near * Math.tan(fov / 2);
-    const right = top * aspect;
-    return frustum(-right, right, -top, top, near, far);
 }
 
 // Orthographic matrix
