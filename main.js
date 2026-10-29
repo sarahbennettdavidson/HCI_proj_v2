@@ -33,7 +33,6 @@ let program, posLoc, timeLoc, uMVM, uPM, uMTM, uvLoc;
 
 let patternCounter = 0;
 const patternNames = ["Checks", "Stripes", "Dots", "WarpedStripes", "uvGradient", "Flat"];
-let patternID = [0, 1, 2, 3, 4, 5]; // pattern per face: front, back, top, bottom, right, left (dummy)
 let pattern = patternNames[0];
 let a1 = Math.random();
 let a2 = Math.random();
@@ -97,16 +96,8 @@ initShaderProgram();
 const cubeRots = [[0, 0, 0], [0, 0, 0]];
 let camX = 0, camY = 0, camZ = -6;
 
-//put palette values here
+// palette and pattern values, and faceMaps, come from init.js
 
-const paletteValues = new Float32Array([0.5, 0.5, 0.5,   0.5, 0.5, 0.5,   1, 1, 1,   0, 0.33, 0.67]);
-const paletteT = 0.5;
-const patternSize = 4;
-const blur = 0.001;
-const patternRot = 0;
-const warpScale = 0.1;   // dummy value
-const warpTiling = 1;    // dummy value
-const flatColor = [0.8, 0.3, 0.2];   // dummy value, rgb 0..1
 const xRotSpeed = 0;
 const yRotSpeed = 0;
 const zRotSpeed = 0;
@@ -116,24 +107,25 @@ const aspect = canvas.width / canvas.height;
 let proj = ortho(-2.5 * aspect, 2.5 * aspect, -2.5, 2.5, 0.1, 100);
 
 
-const spinBtn = document.getElementById("spinBtn");
-const frontBtn = document.getElementById("frontBtn");
+let animating = false;   // true while any rotation runs; SPIN and FRONT do nothing then
 
 function spin() {
-  spinBtn.disabled = true;           // disabled until both cubes finish
-  frontBtn.disabled = true;
+  if (animating) {
+    return;
+  }
+  animating = true;
   Promise.all([AnimateRotation(0, 500), AnimateRotation(1, 500)]).then(() => {
-    spinBtn.disabled = false;
-    frontBtn.disabled = false;
+    animating = false;
   });
 }
 
 function front() {
-  spinBtn.disabled = true;           // disabled until both cubes are back at the front
-  frontBtn.disabled = true;
+  if (animating) {
+    return;
+  }
+  animating = true;
   Promise.all([resetCube(0), resetCube(1)]).then(() => {
-    spinBtn.disabled = false;
-    frontBtn.disabled = false;
+    animating = false;
   });
 }
 
@@ -187,10 +179,10 @@ function AnimateRotation(cubeIndex, duration, axis) {
 }
 
 // undoes one cube's rotations, newest first, each with the inverse axis, so it ends back at the front.
-// each step takes round(1000 / number of rotations) ms, so the whole reset takes about 1 second.
+// each step takes 150 ms, however many rotations there are.
 async function resetCube(cubeIndex) {
   const history = rotations[cubeIndex];
-  const duration = Math.round(1000 / history.length);
+  const duration = 150;
   for (let i = history.length - 1; i >= 0; i--) {
     const inverse = [-history[i][0], -history[i][1], -history[i][2]];
     await AnimateRotation(cubeIndex, duration, inverse);
@@ -212,16 +204,61 @@ document.getElementById("frontBtn").addEventListener("click", front);
 
 // on closing the instructions popup: 3 random rotations per cube, 250 ms each, one after another
 async function scramble() {
-  spinBtn.disabled = true;           // disabled while animation is happening
-  frontBtn.disabled = true;
+  animating = true;
   for (let i = 0; i < 3; i++) {
     await Promise.all([AnimateRotation(0, 250), AnimateRotation(1, 250)]);
   }
-  spinBtn.disabled = false;
-  frontBtn.disabled = false;
+  animating = false;
 }
 
 document.getElementById("instructions").addEventListener("close", scramble);
+
+// pattern parameters from init.js (one set per pattern), sent to the fragment shader
+function setPatternUniforms() {
+  gl.uniform3fv(gl.getUniformLocation(program, "paletteParamsList"), paletteValues);
+  gl.uniform1fv(gl.getUniformLocation(program, "paletteTList"), paletteT);
+  gl.uniform1fv(gl.getUniformLocation(program, "patternSizeList"), patternSize);
+  gl.uniform1fv(gl.getUniformLocation(program, "blurList"), blur);
+  gl.uniform1fv(gl.getUniformLocation(program, "patternRotList"), patternRot);
+  gl.uniform1fv(gl.getUniformLocation(program, "warpScaleList"), warpScale);
+  gl.uniform1fv(gl.getUniformLocation(program, "warpTilingList"), warpTiling);
+  gl.uniform3fv(gl.getUniformLocation(program, "flatColorList"), flatColor);
+}
+
+// draws each pattern once into the tiles on the right, in pattern index order (top row = 0).
+// both columns show the same patterns for now.
+// each pattern is drawn on the cube's front face, filling a tileSize x tileSize corner of the
+// gl canvas, then copied into the tile canvases.
+function drawTiles() {
+  const tileSize = 50;
+  const tileProj = ortho(-1, 1, -1, 1, 0.1, 100);    // front face (-1..1) fills the viewport
+  const allFaces = [0, 0, 0, 0, 0, 0];
+
+  gl.viewport(0, 0, tileSize, tileSize);
+  gl.enable(gl.DEPTH_TEST);
+  gl.uniformMatrix4fv(uPM, false, tileProj);
+  gl.uniformMatrix4fv(uMVM, false, mat4Translate(mat4Identity(), [0, 0, -6]));
+  setPatternUniforms();
+
+  for (let p = 0; p < 6; p++) {
+    for (let f = 0; f < 6; f++) {
+      allFaces[f] = p;
+    }
+    gl.clearColor(0, 0, 0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.uniform1iv(gl.getUniformLocation(program, "patternNum"), allFaces);
+    drawShape(cubeBuffers, mat4Identity());
+
+    // the viewport is the bottom-left corner of the gl canvas
+    for (let col = 0; col < 2; col++) {
+      const tile = document.getElementById("tile" + (p * 2 + col));
+      tile.getContext("2d").drawImage(canvas, 0, canvas.height - tileSize, tileSize, tileSize, 0, 0, tileSize, tileSize);
+    }
+  }
+
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+}
 
 let startTime = Date.now();
 
@@ -250,24 +287,19 @@ function render() {
   gl.uniformMatrix4fv(uMVM, false, modelViewMatrix);
 
   //making some variables for the shader color parameters
-  gl.uniform1iv(gl.getUniformLocation(program, "patternNum"), patternID);
-  gl.uniform3fv(gl.getUniformLocation(program, "paletteParams"), paletteValues);
-  gl.uniform1f(gl.getUniformLocation(program, "paletteT"), paletteT);
-  gl.uniform1f(gl.getUniformLocation(program, "patternSize"), patternSize);
-  gl.uniform1f(gl.getUniformLocation(program, "blur"), blur);
-  gl.uniform1f(gl.getUniformLocation(program, "patternRot"), patternRot);
-  gl.uniform1f(gl.getUniformLocation(program, "warpScale"), warpScale);
-  gl.uniform1f(gl.getUniformLocation(program, "warpTiling"), warpTiling);
-  gl.uniform3fv(gl.getUniformLocation(program, "flatColor"), flatColor);
+  setPatternUniforms();
 
-
-  // two cubes, offset left and right in x, each with its own rotation
+  // two cubes, offset left and right in x, each with its own rotation and its own face mapping
   const cubeOffsetX = 2.5;
+  gl.uniform1iv(gl.getUniformLocation(program, "patternNum"), faceMaps[0]);
   drawShape(cubeBuffers, cubeModelMatrix(-cubeOffsetX, cubeRots[0]));
+  gl.uniform1iv(gl.getUniformLocation(program, "patternNum"), faceMaps[1]);
   drawShape(cubeBuffers, cubeModelMatrix( cubeOffsetX, cubeRots[1]));
 }
 
 // Initialize when page loads
 window.onload = function () {
+  init();          // init.js: random face mappings and pattern parameters
+  drawTiles();
   setInterval(render, 30);
 }
