@@ -410,31 +410,13 @@ fragColor = vec4(fc, 1.0);
         angleSlider.addEventListener("input", () => { patternRot = parseFloat(angleSlider.value); });
 
 
-        // Projection setup
-        let fov = Math.PI / 4, aspect = canvas.width / canvas.height, zNear = 0.1, zFar = 100;
-
         let orthoSize = 2.5;
-
-        // Perspective and Orthographic projection
-        let projPerspective = perspective(fov, aspect, zNear, zFar);
-
         let projOrtho = matMul(
         box2Cube(-orthoSize * aspect, orthoSize * aspect, -orthoSize, orthoSize, zNear, zFar),
         flipZ()
     );
     let proj = projOrtho;
     
-    //behavior to toggle projection types
-    const projBtn = document.getElementById("projBtn");
-    projBtn.addEventListener("click", () => {
-      if (proj === projOrtho) {
-        proj = projPerspective;
-        projBtn.textContent = "Perspective";
-      } else {
-        proj = projOrtho;
-         projBtn.textContent = "Orthographic";
-      }
-});
 
     const shapeBtn = document.getElementById("shapeBtn");
     shapeBtn.addEventListener("click", () => {
