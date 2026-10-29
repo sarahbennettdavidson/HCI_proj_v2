@@ -410,12 +410,8 @@ fragColor = vec4(fc, 1.0);
         angleSlider.addEventListener("input", () => { patternRot = parseFloat(angleSlider.value); });
 
 
-        let orthoSize = 2.5;
-        let projOrtho = matMul(
-        box2Cube(-orthoSize * aspect, orthoSize * aspect, -orthoSize, orthoSize, zNear, zFar),
-        flipZ()
-    );
-    let proj = projOrtho;
+    const aspect = canvas.width / canvas.height;
+    let proj = ortho(-2.5 * aspect, 2.5 * aspect, -2.5, 2.5, 0.1, 100);
     
 
     const shapeBtn = document.getElementById("shapeBtn");
