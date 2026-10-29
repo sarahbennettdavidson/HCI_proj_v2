@@ -1,5 +1,3 @@
-//fragmentShader.js
-
 const fragmentShaderSource = `#version 300 es
 precision mediump float;
 in vec3 vColor;
@@ -12,6 +10,9 @@ uniform float paletteT;
 uniform float patternSize;
 uniform float blur;
 uniform float patternRot;
+uniform float warpScale;   // warp amplitude, in UV units
+uniform float warpTiling;  // sine waves per UV unit
+uniform vec3 flatColor;    // rgb for the flat pattern
 
 out vec4 fragColor;
 
@@ -48,15 +49,28 @@ void main() {
   float stripes = 1.0 - smoothstep(0.5 - blur, 0.5 + blur, ty);
   float dots    = 1.0 - smoothstep(0.33-blur, 0.33+blur, length(brickTile(p) - 0.5));
 
+  // warped stripes: https://andreashackel.de/blog/2017-10-03-stripes-shader-1/
+  // stripes run along y here, so y is pushed by a sine wave over x
+  vec2 w = uv;
+  w.y += sin(w.x * warpTiling * 6.283185) * warpScale;
+  vec2 pw = w * patternSize;
+  float twy = abs(fract((pw.y - 0.5) * 0.5) * 2.0 - 1.0);
+  float warpedStripes = 1.0 - smoothstep(0.5 - blur, 0.5 + blur, twy);
+
   float value;
   switch (patternNum) {
-    case 0:  value = checks;  break;
-    case 1:  value = stripes; break;
-    case 2:  value = dots;    break;
-    default: value = 1.0;     break;
-}  
+    case 0:  value = checks;        break;
+    case 1:  value = stripes;       break;
+    case 2:  value = dots;          break;
+    case 3:  value = warpedStripes; break;
+    case 4:  value = 0.0;           break; // uvGradient, color set below
+    case 5:  value = 0.0;           break; // flat, color set below
+    default: value = 1.0;           break;
+}
 vec3 fc = palette(value*paletteT, paletteParams[0],paletteParams[1],paletteParams[2],paletteParams[3]);// swap in stripes or dots and use palette
-fragColor = vec4(fc, 1.0);   
+if (patternNum == 4) fc = vec3(vUV, 0.0); // uvGradient: red = u, green = v
+if (patternNum == 5) fc = flatColor;       // flat
+fragColor = vec4(fc, 1.0);
 //fragColor = vec4(vUV, 0.0, 1.0);//uv test
 }
 `;
