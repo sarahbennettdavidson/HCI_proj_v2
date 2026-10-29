@@ -32,7 +32,7 @@ const fragSource = fragmentShaderSource;
 let program, posLoc, colorLoc, timeLoc, uMVM, uPM, uMTM, uvLoc;
 
 let patternCounter = 0;
-const patternNames = ["Checks", "Stripes", "Dots"];
+const patternNames = ["Checks", "Stripes", "Dots", "WarpedStripes", "uvGradient", "Flat"];
 let patternID = patternCounter%patternNames.length;
 let pattern = patternNames[0];
 let a1 = Math.random();
@@ -112,6 +112,9 @@ const paletteT = 0.5;
 const patternSize = 4;
 const blur = 0.001;
 const patternRot = 0;
+const warpScale = 0.1;   // dummy value
+const warpTiling = 1;    // dummy value
+const flatColor = [0.8, 0.3, 0.2];   // dummy value, rgb 0..1
 const xRotSpeed = 0;
 const yRotSpeed = 0;
 const zRotSpeed = 0;
@@ -120,14 +123,6 @@ const zRotSpeed = 0;
 const aspect = canvas.width / canvas.height;
 let proj = ortho(-2.5 * aspect, 2.5 * aspect, -2.5, 2.5, 0.1, 100);
 
-
-const patternBtn = document.getElementById("patternBtn");
-patternBtn.addEventListener("click", () => {
-  patternCounter++;
-  patternID = patternCounter % patternNames.length
-  pattern = patternNames[patternID];
-  patternBtn.textContent = pattern;
-});
 
 function spin() {
   console.log("SPIN");
@@ -187,6 +182,9 @@ function render() {
   gl.uniform1f(gl.getUniformLocation(program, "patternSize"), patternSize);
   gl.uniform1f(gl.getUniformLocation(program, "blur"), blur);
   gl.uniform1f(gl.getUniformLocation(program, "patternRot"), patternRot);
+  gl.uniform1f(gl.getUniformLocation(program, "warpScale"), warpScale);
+  gl.uniform1f(gl.getUniformLocation(program, "warpTiling"), warpTiling);
+  gl.uniform3fv(gl.getUniformLocation(program, "flatColor"), flatColor);
 
 
   drawShape(cubeBuffers, modelTransformationMatrix);
