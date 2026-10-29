@@ -1,10 +1,11 @@
+//fragmentShader.js
 const fragmentShaderSource = `#version 300 es
 precision mediump float;
-in vec3 vColor;
 in vec3 vPos;//to get color placements from vertex shader
 in vec2 vUV;
+flat in int faceIndex;
 
-uniform int patternNum;
+uniform int patternNum[6]; // one pattern per face
 uniform vec3 paletteParams[4];
 uniform float paletteT;
 uniform float patternSize;
@@ -58,7 +59,7 @@ void main() {
   float warpedStripes = 1.0 - smoothstep(0.5 - blur, 0.5 + blur, twy);
 
   float value;
-  switch (patternNum) {
+  switch (patternNum[faceIndex]) {
     case 0:  value = checks;        break;
     case 1:  value = stripes;       break;
     case 2:  value = dots;          break;
@@ -68,8 +69,8 @@ void main() {
     default: value = 1.0;           break;
 }
 vec3 fc = palette(value*paletteT, paletteParams[0],paletteParams[1],paletteParams[2],paletteParams[3]);// swap in stripes or dots and use palette
-if (patternNum == 4) fc = vec3(vUV, 0.0); // uvGradient: red = u, green = v
-if (patternNum == 5) fc = flatColor;       // flat
+if (patternNum[faceIndex] == 4) fc = vec3(vUV, 0.0); // uvGradient: red = u, green = v
+if (patternNum[faceIndex] == 5) fc = flatColor;       // flat
 fragColor = vec4(fc, 1.0);
 //fragColor = vec4(vUV, 0.0, 1.0);//uv test
 }
