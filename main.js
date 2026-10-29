@@ -1,5 +1,3 @@
-//main.js
-
 function createShader(gl, type, source) {
   let shader = gl.createShader(type);
   gl.shaderSource(shader, source);
@@ -117,12 +115,45 @@ const aspect = canvas.width / canvas.height;
 let proj = ortho(-2.5 * aspect, 2.5 * aspect, -2.5, 2.5, 0.1, 100);
 
 
+const spinBtn = document.getElementById("spinBtn");
+
 function spin() {
-  console.log("SPIN");
+  spinBtn.disabled = true;           // disabled while the rotation runs
+  randomRot(500).then(() => { spinBtn.disabled = false; });
 }
 
 function front() {
   console.log("FRONT");
+}
+
+//rotation animation function. can be triggered once or repeatedly so neeeds to report it's completed.
+// Rotates the cube 90 degrees around a random axis (x, y or z) in a random direction.
+// duration is in milliseconds. Returns a Promise that resolves with { axis, sign } when done.
+function randomRot(duration) {
+  const axisIndex = Math.floor(Math.random() * 3);   // 0 = x, 1 = y, 2 = z
+  const sign = Math.random() < 0.5 ? -1 : 1;         // direction (inverse when -1)
+  const axis = [0, 0, 0];
+  axis[axisIndex] = sign;                             // e.g. [0, -1, 0]
+
+  const start = [cubeRotX, cubeRotY, cubeRotZ];
+  const total = Math.PI / 2;                          // 90 degrees in radians
+  let t0 = null;
+
+  return new Promise(resolve => {
+    function step(now) {
+      if (t0 === null) t0 = now;
+      const t = duration > 0 ? Math.min((now - t0) / duration, 1) : 1;   // 0..1
+      const ang = t * total;
+
+      cubeRotX = start[0] + axis[0] * ang;
+      cubeRotY = start[1] + axis[1] * ang;
+      cubeRotZ = start[2] + axis[2] * ang;
+
+      if (t < 1) requestAnimationFrame(step);
+      else resolve({ axis: axisIndex, sign: sign });
+    }
+    requestAnimationFrame(step);
+  });
 }
 
 document.getElementById("spinBtn").addEventListener("click", spin);
@@ -181,7 +212,7 @@ function render() {
 
 
   // two cubes, offset left and right in x
-  const cubeOffsetX = 0.5;
+  const cubeOffsetX = 2.5;
   drawShape(cubeBuffers, multiplyMat4(mat4Translate(mat4Identity(), [-cubeOffsetX, 0, 0]), modelTransformationMatrix));
   drawShape(cubeBuffers, multiplyMat4(mat4Translate(mat4Identity(), [ cubeOffsetX, 0, 0]), modelTransformationMatrix));
 }
