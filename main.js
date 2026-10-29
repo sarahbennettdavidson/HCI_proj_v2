@@ -1,3 +1,4 @@
+//main.js
 function createShader(gl, type, source) {
   let shader = gl.createShader(type);
   gl.shaderSource(shader, source);
@@ -29,27 +30,23 @@ if (!gl) alert("WebGL2 not supported");
 const vertSource = vertexShaderSource;
 const fragSource = fragmentShaderSource;
 
-let program, posLoc, colorLoc, timeLoc, uMVM, uPM, uMTM, uvLoc;
+let program, posLoc, timeLoc, uMVM, uPM, uMTM, uvLoc;
 
 let patternCounter = 0;
 const patternNames = ["Checks", "Stripes", "Dots", "WarpedStripes", "uvGradient", "Flat"];
-let patternID = patternCounter%patternNames.length;
+let patternID = [0, 1, 2, 3, 4, 5]; // pattern per face: front, back, top, bottom, right, left (dummy)
 let pattern = patternNames[0];
 let a1 = Math.random();
 let a2 = Math.random();
 let a3 = Math.random();
 
 // cube buffers, made once
-function makeShapeBuffers(pos, col, uv, idx) {
+function makeShapeBuffers(pos, uv, idx) {
   const b = {};
 
   b.vbo = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, b.vbo);
   gl.bufferData(gl.ARRAY_BUFFER, pos, gl.STATIC_DRAW);
-
-  b.nbo = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, b.nbo);
-  gl.bufferData(gl.ARRAY_BUFFER, col, gl.STATIC_DRAW);
 
   b.uvbo = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, b.uvbo);
@@ -63,7 +60,7 @@ function makeShapeBuffers(pos, col, uv, idx) {
   return b;
 }
 
-const cubeBuffers = makeShapeBuffers(cubePos, cubeColors, cubeUVs, cubeIndices);
+const cubeBuffers = makeShapeBuffers(cubePos, cubeUVs, cubeIndices);
 
 // draw one shape with one model matrix
 function drawShape(b, matrix) {
@@ -72,10 +69,6 @@ function drawShape(b, matrix) {
   gl.bindBuffer(gl.ARRAY_BUFFER, b.vbo);
   gl.enableVertexAttribArray(posLoc);
   gl.vertexAttribPointer(posLoc, 3, gl.FLOAT, false, 0, 0);
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, b.nbo);
-  gl.enableVertexAttribArray(colorLoc);
-  gl.vertexAttribPointer(colorLoc, 3, gl.FLOAT, false, 0, 0);
 
   gl.bindBuffer(gl.ARRAY_BUFFER, b.uvbo);
   gl.enableVertexAttribArray(uvLoc);
@@ -90,7 +83,6 @@ function initShaderProgram() {
     program = createProgram(gl, vertSource, fragSource);
     gl.useProgram(program);
     posLoc = gl.getAttribLocation(program, "aPosition");
-    colorLoc = gl.getAttribLocation(program, "aColor");
     uvLoc = gl.getAttribLocation(program, "aUV");
     timeLoc = gl.getUniformLocation(program, "uTime");
     uMVM = gl.getUniformLocation(program, "uModelViewMatrix");
@@ -142,9 +134,10 @@ function render() {
   gl.clearColor(0, 0, 0, 1);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  //cubeRotY += yRotSpeed * 0.01;
-  //cubeRotX += xRotSpeed * 0.01;
-  //cubeRotZ += zRotSpeed * 0.01;
+  cubeRotY += yRotSpeed * 0.01;
+  cubeRotX += xRotSpeed * 0.01;
+  cubeRotZ += zRotSpeed * 0.01;
+
 
   // rotation matrices
   let cx = Math.cos(cubeRotY), sx = Math.sin(cubeRotY);
@@ -175,7 +168,7 @@ function render() {
   gl.uniformMatrix4fv(uMVM, false, modelViewMatrix);
 
   //making some variables for the shader color parameters
-  gl.uniform1i(gl.getUniformLocation(program, "patternNum"), patternID);
+  gl.uniform1iv(gl.getUniformLocation(program, "patternNum"), patternID);
   gl.uniform3fv(gl.getUniformLocation(program, "paletteParams"), paletteValues);
   gl.uniform1f(gl.getUniformLocation(program, "paletteT"), paletteT);
   gl.uniform1f(gl.getUniformLocation(program, "patternSize"), patternSize);
