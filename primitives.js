@@ -14,14 +14,6 @@ const cubePos = new Float32Array([
   -1, -1, -1,  -1, -1,  1,  -1,  1,  1,  -1,  1, -1
 ]);
 
-const cubeColors = new Float32Array([
-  1,0,1,  0,1,1,  1,1,0,  1,0,1,   // front
-  0,1,0,  1,0,0,  1,1,0,  0,0,1,   // back
-  1,0,1,  1,1,0,  0,0,1,  1,1,0,   // top
-  1,0,0,  0,1,0,  0,1,1,  1,0,1,   // bottom
-  0,1,1,  0,1,0,  0,0,1,  1,1,0,   // right
-  1,0,0,  1,0,1,  1,0,1,  1,1,0    // left
-]);
 
 const cubeUVs = new Float32Array([
   0,0,  1,0,  1,1,  0,1,   // front
