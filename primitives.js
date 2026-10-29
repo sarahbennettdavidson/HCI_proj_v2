@@ -1,3 +1,4 @@
+//primitives.js
 // cube
 const cubePos = new Float32Array([
   // front (z = 1)
