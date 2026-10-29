@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8">
-  <title>HCI Prototype Assignment</title>
+  <title>UNM CS 412/512 HW3</title>
   <style>
     body {
       background: #111;
@@ -13,6 +13,67 @@
 
     canvas {
       border: 1px solid #444;
+    }
+
+    #layout {
+      display: flex;
+      gap: 40px;
+      align-items: flex-start;
+    }
+
+    /* left column: SPIN, FRONT, QUIT */
+    #controls {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      gap: 20px;
+      align-self: stretch;
+    }
+
+    #controls button {
+      width: 100px;
+      height: 50px;
+    }
+
+    /* center: canvas with one cross under each half */
+    #crosses {
+      display: flex;
+    }
+
+    .cross {
+      width: 400px;              /* half the canvas width */
+      display: grid;
+      grid-template-columns: repeat(4, 50px);
+      grid-template-rows: repeat(3, 50px);
+      gap: 4px;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .cross button {
+      width: 50px;
+      height: 50px;
+      padding: 0;
+    }
+
+    .cross .top   { grid-column: 2; grid-row: 1; }
+    .cross .left  { grid-column: 1; grid-row: 2; }
+    .cross .front { grid-column: 2; grid-row: 2; }
+    .cross .right { grid-column: 3; grid-row: 2; }
+    .cross .back  { grid-column: 4; grid-row: 2; }
+    .cross .base  { grid-column: 2; grid-row: 3; }
+
+    /* right column: counters and the 2 x 6 tile grid */
+    #tiles {
+      display: grid;
+      grid-template-columns: repeat(2, 50px);
+      grid-auto-rows: 50px;
+      gap: 20px;
+      margin-top: 10px;
+    }
+
+    .tile {
+      border: 1px solid;
     }
   </style>
 </head>
@@ -30,23 +91,65 @@ Reset to face front again.<br>
 
 When you run out of tries, you lose!.</p>
 
-  <div style="display: flex; gap: 10px; align-items: flex-start;">
-    <div>
-      <canvas id="glcanvas" width="400" height="400"></canvas>
+  <div id="layout">
 
-      <div>
-        <button id="patternBtn">Checks</button>
-        <button id="spinBtn">SPIN</button>
-        <button id="frontBtn">FRONT</button>
+    <div id="controls">
+      <button id="spinBtn">SPIN</button>
+      <button id="frontBtn">FRONT</button>
+      <button id="quitBtn">QUIT</button>
+    </div>
+
+    <div id="center">
+      <canvas id="glcanvas" width="800" height="400"></canvas>
+
+      <div id="crosses">
+        <div class="cross" id="leftCross">
+          <button class="top"   id="left-top">Top</button>
+          <button class="left"  id="left-left">Left</button>
+          <button class="front" id="left-front">Front</button>
+          <button class="right" id="left-right">Right</button>
+          <button class="back"  id="left-back">Back</button>
+          <button class="base"  id="left-base">Base</button>
+        </div>
+
+        <div class="cross" id="rightCross">
+          <button class="top"   id="right-top">Top</button>
+          <button class="left"  id="right-left">Left</button>
+          <button class="front" id="right-front">Front</button>
+          <button class="right" id="right-right">Right</button>
+          <button class="back"  id="right-back">Back</button>
+          <button class="base"  id="right-base">Base</button>
+        </div>
       </div>
     </div>
+
+    <div id="status">
+      <div>Matches: <span id="matches">0</span></div>
+      <div>Tries Left: <span id="tries">7</span></div>
+
+      <div id="tiles">
+        <div class="tile" id="tile0"></div>
+        <div class="tile" id="tile1"></div>
+        <div class="tile" id="tile2"></div>
+        <div class="tile" id="tile3"></div>
+        <div class="tile" id="tile4"></div>
+        <div class="tile" id="tile5"></div>
+        <div class="tile" id="tile6"></div>
+        <div class="tile" id="tile7"></div>
+        <div class="tile" id="tile8"></div>
+        <div class="tile" id="tile9"></div>
+        <div class="tile" id="tile10"></div>
+        <div class="tile" id="tile11"></div>
+      </div>
+    </div>
+
   </div>
 
   <script src="primitives.js"></script>
   <script src="transformations.js"></script>
   <script src="vertexShader.js"></script>
   <script src="fragmentShader.js"></script>
-  <script src="init.js"></script>
+
   <script src="main.js"></script>
 </body>
 
