@@ -174,6 +174,17 @@ function cubeModelMatrix(offsetX, rot) {
 document.getElementById("spinBtn").addEventListener("click", spin);
 document.getElementById("frontBtn").addEventListener("click", front);
 
+// on closing the instructions popup: 3 random rotations per cube, 250 ms each, one after another
+async function scramble() {
+  spinBtn.disabled = true;           // disabled while animation is happening
+  for (let i = 0; i < 3; i++) {
+    await Promise.all([randomRot(0, 250), randomRot(1, 250)]);
+  }
+  spinBtn.disabled = false;
+}
+
+document.getElementById("instructions").addEventListener("close", scramble);
+
 let startTime = Date.now();
 
 function render() {
