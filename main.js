@@ -202,12 +202,14 @@ function cubeModelMatrix(offsetX, rot) {
 document.getElementById("spinBtn").addEventListener("click", spin);
 document.getElementById("frontBtn").addEventListener("click", front);
 
-// on closing the instructions popup: 3 random rotations per cube, 250 ms each, one after another
+// on closing the instructions popup: 3 random rotations per cube, 250 ms each, one after another,
+// then reset both cubes back to the front
 async function scramble() {
   animating = true;
   for (let i = 0; i < 3; i++) {
     await Promise.all([AnimateRotation(0, 250), AnimateRotation(1, 250)]);
   }
+  await Promise.all([resetCube(0), resetCube(1)]);
   animating = false;
 }
 
@@ -225,12 +227,24 @@ function setPatternUniforms() {
   gl.uniform3fv(gl.getUniformLocation(program, "flatColorList"), flatColor);
 }
 
-// draws each pattern once into the tiles on the right, in pattern index order (top row = 0).
-// both columns show the same patterns for now.
+// ---------------------------------------------------------------------------------------------
+// tiles: 2 columns x 6 rows on the right. row = pattern index (top = 0), column = cube (0 left, 1 right)
+// tile id: "tile" + (pattern * 2 + cube)
+
+const tileSize = 50;
+const tileFade = 500;                  // ms, fade to/from black
+const patternImages = [];              // one offscreen 50 x 50 image per pattern, made by drawTiles
+const tileAlpha = new Array(12).fill(0);       // current brightness of each tile, 0 = black
+const tileFadeToken = new Array(12).fill(0);   // a newer fade on a tile cancels the older one
+
+function tileIndex(cube, pattern) {
+  return pattern * 2 + cube;
+}
+
+// draws each pattern once into its offscreen image, then sets every tile to black.
 // each pattern is drawn on the cube's front face, filling a tileSize x tileSize corner of the
-// gl canvas, then copied into the tile canvases.
+// gl canvas, then copied out.
 function drawTiles() {
-  const tileSize = 50;
   const tileProj = ortho(-1, 1, -1, 1, 0.1, 100);    // front face (-1..1) fills the viewport
   const allFaces = [0, 0, 0, 0, 0, 0];
 
@@ -250,14 +264,177 @@ function drawTiles() {
     drawShape(cubeBuffers, mat4Identity());
 
     // the viewport is the bottom-left corner of the gl canvas
-    for (let col = 0; col < 2; col++) {
-      const tile = document.getElementById("tile" + (p * 2 + col));
-      tile.getContext("2d").drawImage(canvas, 0, canvas.height - tileSize, tileSize, tileSize, 0, 0, tileSize, tileSize);
-    }
+    const img = document.createElement("canvas");
+    img.width = tileSize;
+    img.height = tileSize;
+    img.getContext("2d").drawImage(canvas, 0, canvas.height - tileSize, tileSize, tileSize, 0, 0, tileSize, tileSize);
+    patternImages[p] = img;
   }
 
   gl.viewport(0, 0, canvas.width, canvas.height);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+  for (let t = 0; t < 12; t++) {
+    paintTile(t, 0);
+  }
+}
+
+// draws a tile: black, with its pattern on top at the given brightness (0..1)
+function paintTile(t, alpha) {
+  const ctx = document.getElementById("tile" + t).getContext("2d");
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, tileSize, tileSize);
+  ctx.globalAlpha = alpha;
+  ctx.drawImage(patternImages[Math.floor(t / 2)], 0, 0);
+  ctx.globalAlpha = 1;
+  tileAlpha[t] = alpha;
+}
+
+// fades a tile from its current brightness to "to" (0 = black, 1 = pattern) over tileFade ms
+function fadeTile(t, to) {
+  const from = tileAlpha[t];
+  tileFadeToken[t] = tileFadeToken[t] + 1;
+  const token = tileFadeToken[t];
+  let t0 = null;
+
+  return new Promise(resolve => {
+    function step(now) {
+      if (token !== tileFadeToken[t]) {     // a newer fade on this tile took over
+        resolve();
+        return;
+      }
+      if (t0 === null) t0 = now;
+      const k = Math.min((now - t0) / tileFade, 1);
+      paintTile(t, from + (to - from) * k);
+      if (k < 1) requestAnimationFrame(step);
+      else resolve();
+    }
+    requestAnimationFrame(step);
+  });
+}
+
+// ---------------------------------------------------------------------------------------------
+// game state
+
+let tries = 10;
+let matches = 0;                                   // distinct pairs matched so far (kept after wrong answers)
+const matched = [false, false, false, false, false, false];        // pattern index -> matched before
+const showing = [[false, false, false, false, false, false],       // showing[cube][pattern]: tile lit
+                 [false, false, false, false, false, false]];
+let firstPick = null;          // { cube, pattern } of the first pick of a turn, null when waiting for one
+let resolving = false;         // true while a wrong answer fades out; picks do nothing then
+let gameState = "playing";     // "playing", "won" or "lost" (tracked, not displayed yet)
+
+// cross buttons: id = side + "-" + face name. side "left" = cube 0, "right" = cube 1
+const crossSides = ["left", "right"];
+const crossFaces = { front: 0, back: 1, top: 2, base: 3, right: 4, left: 5 };   // name -> faceIndex
+
+function setCrossDisabled(cube, disabled) {
+  for (const name in crossFaces) {
+    document.getElementById(crossSides[cube] + "-" + name).disabled = disabled;
+  }
+}
+
+function updateScoreboard() {
+  document.getElementById("matches").textContent = matches;
+  document.getElementById("tries").textContent = tries;
+}
+
+function showTile(cube, pattern) {
+  showing[cube][pattern] = true;
+  return fadeTile(tileIndex(cube, pattern), 1);
+}
+
+function hideTile(cube, pattern) {
+  showing[cube][pattern] = false;
+  return fadeTile(tileIndex(cube, pattern), 0);
+}
+
+function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function checkWinLose() {
+  let allShowing = true;
+  for (let p = 0; p < 6; p++) {
+    if (!matched[p] || !showing[0][p] || !showing[1][p]) {
+      allShowing = false;
+    }
+  }
+  if (allShowing) {
+    gameState = "won";
+  } else if (tries <= 0) {
+    gameState = "lost";
+  }
+}
+
+// wrong answer: the second tile finishes fading in, then every other lit tile fades to black,
+// and the two wrong tiles fade half a second after them
+async function wrongAnswer(cubeA, patternA, cubeB, patternB) {
+  resolving = true;
+  setCrossDisabled(0, true);
+  setCrossDisabled(1, true);
+
+  await wait(tileFade);
+  for (let c = 0; c < 2; c++) {
+    for (let p = 0; p < 6; p++) {
+      const isWrongA = (c === cubeA && p === patternA);
+      const isWrongB = (c === cubeB && p === patternB);
+      if (showing[c][p] && !isWrongA && !isWrongB) {
+        hideTile(c, p);
+      }
+    }
+  }
+
+  await wait(500);
+  await Promise.all([hideTile(cubeA, patternA), hideTile(cubeB, patternB)]);
+
+  resolving = false;
+  setCrossDisabled(0, false);
+  setCrossDisabled(1, false);
+}
+
+// a click on a cross button: cube 0 or 1, faceIndex 0..5
+function pick(cube, face) {
+  if (gameState !== "playing" || resolving) {
+    return;
+  }
+  const pattern = faceMaps[cube][face];
+
+  if (firstPick === null) {
+    firstPick = { cube: cube, pattern: pattern };
+    setCrossDisabled(cube, true);        // this cube is done until the other one is picked
+    showTile(cube, pattern);
+    return;
+  }
+
+  // second pick, on the other cube
+  const first = firstPick;
+  firstPick = null;
+  setCrossDisabled(first.cube, false);
+  showTile(cube, pattern);
+
+  if (pattern === first.pattern) {
+    if (!matched[pattern]) {             // new match: costs a try
+      matched[pattern] = true;
+      matches = matches + 1;
+      tries = tries - 1;
+    }                                    // a pair matched before: free
+  } else {
+    tries = tries - 1;
+    wrongAnswer(first.cube, first.pattern, cube, pattern);
+  }
+
+  updateScoreboard();
+  checkWinLose();
+}
+
+for (let cube = 0; cube < 2; cube++) {
+  for (const name in crossFaces) {
+    const face = crossFaces[name];
+    document.getElementById(crossSides[cube] + "-" + name).addEventListener("click", () => pick(cube, face));
+  }
 }
 
 let startTime = Date.now();
@@ -301,5 +478,6 @@ function render() {
 window.onload = function () {
   init();          // init.js: random face mappings and pattern parameters
   drawTiles();
+  updateScoreboard();
   setInterval(render, 30);
 }
