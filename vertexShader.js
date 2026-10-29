@@ -1,5 +1,3 @@
-//vertexShader.js
-
 const vertexShaderSource = `#version 300 es
 in vec3 aPosition;
 in vec2 aUV;      
