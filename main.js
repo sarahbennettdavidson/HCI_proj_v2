@@ -131,7 +131,7 @@ function front() {
 // duration is in milliseconds. Returns a Promise that resolves with { axis, sign } when done.
 function randomRot(duration) {
   const axisIndex = Math.floor(Math.random() * 3);   // 0 = x, 1 = y, 2 = z
-  const sign = Math.random() < 0.5 ? -1 : 1;         // direction (inverse when -1)
+  const sign = Math.sign(Math.random() * 2 - 1);      // direction: -1 or 1
   const axis = [0, 0, 0];
   axis[axisIndex] = sign;                             // e.g. [0, -1, 0]
 
@@ -142,8 +142,12 @@ function randomRot(duration) {
   return new Promise(resolve => {
     function step(now) {
       if (t0 === null) t0 = now;
-      const t = duration > 0 ? Math.min((now - t0) / duration, 1) : 1;   // 0..1
-      const ang = t * total;
+      let t = 1;                                      // 0..1
+      if (duration > 0) {
+        t = Math.min((now - t0) / duration, 1);
+      }
+      const tEased = 1 - Math.sqrt(1 - t * t);        // circular ease-in, 0..1
+      const ang = tEased * total;
 
       cubeRotX = start[0] + axis[0] * ang;
       cubeRotY = start[1] + axis[1] * ang;
