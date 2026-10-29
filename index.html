@@ -21,13 +21,11 @@
       align-items: flex-start;
     }
 
-    /* left column: SPIN, FRONT, QUIT */
+    /* left column: SPIN, FRONT */
     #controls {
       display: flex;
       flex-direction: column;
-      justify-content: flex-end;
       gap: 20px;
-      align-self: stretch;
     }
 
     #controls button {
@@ -80,23 +78,28 @@
 
 <body>
   <h2>Cube Match Game!</h2>
-      Cube faces are scrambled!<br>
 
-  <p>Click on a face in the cube map to select.<br>
-    Click on the other cube map's matching face.<br>
+  <!-- instructions popup: open on load, OK closes it (no JS needed) -->
+  <dialog id="instructions" open>
+    Cube faces are scrambled!<br>
 
-  Spin to show other sides. <br>
-Reset to face front again.<br>
-        Match all patterns to faces to win.<br>
+    <p>Click on a face in the cube map to select.<br>
+      Click on the other cube map's matching face.<br>
+      Spin to show other sides.<br>
+      Reset to face front again.<br>
+      Match all patterns to faces to win.<br>
+      When you run out of tries, you lose!.</p>
 
-When you run out of tries, you lose!.</p>
+    <form method="dialog">
+      <button>OK</button>
+    </form>
+  </dialog>
 
   <div id="layout">
 
     <div id="controls">
       <button id="spinBtn">SPIN</button>
       <button id="frontBtn">FRONT</button>
-      <button id="quitBtn">QUIT</button>
     </div>
 
     <div id="center">
