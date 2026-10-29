@@ -117,26 +117,50 @@ let proj = ortho(-2.5 * aspect, 2.5 * aspect, -2.5, 2.5, 0.1, 100);
 
 
 const spinBtn = document.getElementById("spinBtn");
+const frontBtn = document.getElementById("frontBtn");
 
 function spin() {
   spinBtn.disabled = true;           // disabled until both cubes finish
-  Promise.all([randomRot(0, 500), randomRot(1, 500)]).then(() => { spinBtn.disabled = false; });
+  frontBtn.disabled = true;
+  Promise.all([AnimateRotation(0, 500), AnimateRotation(1, 500)]).then(() => {
+    spinBtn.disabled = false;
+    frontBtn.disabled = false;
+  });
 }
 
 function front() {
-  console.log("FRONT");
+  spinBtn.disabled = true;           // disabled until both cubes are back at the front
+  frontBtn.disabled = true;
+  Promise.all([resetCube(0), resetCube(1)]).then(() => {
+    spinBtn.disabled = false;
+    frontBtn.disabled = false;
+  });
 }
 
-//rotation animation function. can be triggered once or repeatedly so neeeds to report it's completed.
-// Rotates one cube (0 = left, 1 = right) 90 degrees around a random axis (x, y or z) in a random direction.
-// duration is in milliseconds. Returns a Promise that resolves with { axis, sign } when done.
-function randomRot(cubeIndex, duration) {
-  const rot = cubeRots[cubeIndex];
+// every rotation done so far, per cube: 0 = left, 1 = right. each entry is a signed axis, e.g. [0, -1, 0]
+const rotations = [[], []];
+
+// picks a random axis (x, y or z) and direction, and pushes it onto that cube's rotations
+function createRandomRotation(cubeIndex) {
   const axisIndex = Math.floor(Math.random() * 3);   // 0 = x, 1 = y, 2 = z
   const sign = Math.sign(Math.random() * 2 - 1);      // direction: -1 or 1
   const axis = [0, 0, 0];
   axis[axisIndex] = sign;                             // e.g. [0, -1, 0]
+  rotations[cubeIndex].push(axis);
+}
 
+//rotation animation function. can be triggered once or repeatedly so neeeds to report it's completed.
+// Rotates one cube (0 = left, 1 = right) 90 degrees. With no axis given, it creates a random rotation
+// and uses the newest one. resetCube passes an inverse axis instead.
+// duration is in milliseconds. Returns a Promise that resolves with the axis when done.
+function AnimateRotation(cubeIndex, duration, axis) {
+  if (axis === undefined) {
+    createRandomRotation(cubeIndex);
+    const history = rotations[cubeIndex];
+    axis = history[history.length - 1];               // newest rotation
+  }
+
+  const rot = cubeRots[cubeIndex];                    // the cube's angles, changed in place
   const start = [rot[0], rot[1], rot[2]];
   const total = Math.PI / 2;                          // 90 degrees in radians
   let t0 = null;
@@ -148,8 +172,7 @@ function randomRot(cubeIndex, duration) {
       if (duration > 0) {
         t = Math.min((now - t0) / duration, 1);
       }
-      const tEased = 1 - Math.sqrt(1 - t * t); 
-      //const tEased = 1 - Math.sqrt(1 - Math.pow(1 - t. 2));        // circular ease-in, 0..1  sqrt(1 - Math.pow(1 - x. 2))
+      const tEased = 1 - Math.sqrt(1 - t * t);        // circular ease-in, 0..1
       const ang = tEased * total;
 
       rot[0] = start[0] + axis[0] * ang;
@@ -157,10 +180,22 @@ function randomRot(cubeIndex, duration) {
       rot[2] = start[2] + axis[2] * ang;
 
       if (t < 1) requestAnimationFrame(step);
-      else resolve({ axis: axisIndex, sign: sign });
+      else resolve(axis);
     }
     requestAnimationFrame(step);
   });
+}
+
+// undoes one cube's rotations, newest first, each with the inverse axis, so it ends back at the front.
+// each step takes round(1000 / number of rotations) ms, so the whole reset takes about 1 second.
+async function resetCube(cubeIndex) {
+  const history = rotations[cubeIndex];
+  const duration = Math.round(1000 / history.length);
+  for (let i = history.length - 1; i >= 0; i--) {
+    const inverse = [-history[i][0], -history[i][1], -history[i][2]];
+    await AnimateRotation(cubeIndex, duration, inverse);
+  }
+  history.length = 0;                                 // everything is undone
 }
 
 // model matrix for one cube: translate by offsetX, then rotate Y, X, Z (T * Ry * Rx * Rz)
@@ -178,10 +213,12 @@ document.getElementById("frontBtn").addEventListener("click", front);
 // on closing the instructions popup: 3 random rotations per cube, 250 ms each, one after another
 async function scramble() {
   spinBtn.disabled = true;           // disabled while animation is happening
+  frontBtn.disabled = true;
   for (let i = 0; i < 3; i++) {
-    await Promise.all([randomRot(0, 250), randomRot(1, 250)]);
+    await Promise.all([AnimateRotation(0, 250), AnimateRotation(1, 250)]);
   }
   spinBtn.disabled = false;
+  frontBtn.disabled = false;
 }
 
 document.getElementById("instructions").addEventListener("close", scramble);
