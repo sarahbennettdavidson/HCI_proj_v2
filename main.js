@@ -181,7 +181,7 @@ function render() {
 
 
   // two cubes, offset left and right in x
-  const cubeOffsetX = 2.5;
+  const cubeOffsetX = 0.5;
   drawShape(cubeBuffers, multiplyMat4(mat4Translate(mat4Identity(), [-cubeOffsetX, 0, 0]), modelTransformationMatrix));
   drawShape(cubeBuffers, multiplyMat4(mat4Translate(mat4Identity(), [ cubeOffsetX, 0, 0]), modelTransformationMatrix));
 }
