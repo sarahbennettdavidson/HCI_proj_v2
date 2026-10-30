@@ -132,6 +132,22 @@
       position: relative;
     }
 
+    /* header and score: larger, in the complement of the background (--glow, set by init.js) */
+    h2 {
+      font-size: 40px;
+      color: rgb(var(--glow));
+      /* centered over the canvas: starts after the SPIN/FRONT column (100px + 40px gap),
+         and is as wide as the canvas (800px + 2px border) */
+      margin-left: 140px;
+      width: 802px;
+      text-align: center;
+    }
+
+    .score {
+      font-size: 22px;
+      color: rgb(var(--glow));
+    }
+
     /* keep the instructions popup above the canvas and the text layer */
     #instructions {
       z-index: 10;
@@ -206,8 +222,8 @@
     </div>
 
     <div id="status">
-      <div>Matches: <span id="matches">0</span></div>
-      <div>Tries Left: <span id="tries">10</span></div>
+      <div class="score">Matches: <span id="matches">0</span></div>
+      <div class="score">Tries Left: <span id="tries">10</span></div>
 
       <div id="tiles">
         <canvas class="tile" id="tile0" width="50" height="50"></canvas>
