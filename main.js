@@ -412,6 +412,17 @@ function hideTile(cube, pattern) {
   return fadeTile(tileIndex(cube, pattern), 0);
 }
 
+// "Match!" or "No Match!" over the canvas: appears at full white, holds, then fades out (1.5 s)
+function showResult(text) {
+  const el = document.getElementById("resultText");
+  el.textContent = text;
+  el.animate([
+    { opacity: 1, offset: 0 },
+    { opacity: 1, offset: 0.3 },
+    { opacity: 0, offset: 1 }
+  ], { duration: 1500, easing: "ease-in" });
+}
+
 function wait(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -480,6 +491,7 @@ function pick(cube, face) {
   showTile(cube, pattern);
 
   if (pattern === first.pattern) {
+    showResult("Match!");
     guiding = false;                     // first correct match ends the guide pulse
     if (!matched[pattern]) {             // new match: costs a try
       matched[pattern] = true;
@@ -487,6 +499,7 @@ function pick(cube, face) {
       tries = tries - 1;
     }                                    // a pair matched before: free
   } else {
+    showResult("No Match!");
     tries = tries - 1;
     wrongAnswer(first.cube, first.pattern, cube, pattern);
   }
