@@ -32,7 +32,7 @@ const fragSource = fragmentShaderSource;
 let program, posLoc, timeLoc, uMVM, uPM, uMTM, uvLoc;
 
 let patternCounter = 0;
-const patternNames = ["Checks", "Stripes", "Dots", "WarpedStripes", "uvGradient", "Flat"];
+const patternNames = ["Checks", "Stripes", "Dots", "WarpedStripes", "Perlin", "Flat"];
 let pattern = patternNames[0];
 let a1 = Math.random();
 let a2 = Math.random();
@@ -59,6 +59,18 @@ function makeShapeBuffers(pos, uv, idx) {
 }
 
 const cubeBuffers = makeShapeBuffers(cubePos, cubeUVs, cubeIndices);
+
+// background plane: a -1..1 square in x and y, uvs 0..1
+const planePos = new Float32Array([
+  -1, -1, 0,   1, -1, 0,   1,  1, 0,  -1,  1, 0
+]);
+const planeUVs = new Float32Array([
+  0, 0,   1, 0,   1, 1,   0, 1
+]);
+const planeIndices = new Uint16Array([
+  0, 1, 2,   0, 2, 3
+]);
+const planeBuffers = makeShapeBuffers(planePos, planeUVs, planeIndices);
 
 // draw one shape with one model matrix
 function drawShape(b, matrix) {
@@ -490,6 +502,13 @@ function render() {
 
   //making some variables for the shader color parameters
   setPatternUniforms();
+
+  // background plane behind both cubes, scaled to fill the whole view (x -5..5, y -2.5..2.5)
+  let planeMatrix = mat4Translate(mat4Identity(), [0, 0, -14]);
+  planeMatrix = mat4Scale(planeMatrix, [2.5 * aspect, 2.5, 1]);
+  gl.uniform1i(gl.getUniformLocation(program, "uvPlane"), 1);
+  drawShape(planeBuffers, planeMatrix);
+  gl.uniform1i(gl.getUniformLocation(program, "uvPlane"), 0);
 
   // two cubes, offset left and right in x, each with its own rotation and its own face mapping
   const cubeOffsetX = 2.5;
