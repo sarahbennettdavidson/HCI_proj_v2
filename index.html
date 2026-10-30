@@ -73,6 +73,68 @@
     .tile {
       border: 1px solid;
     }
+
+    /* ---------------- button glow and press ---------------- */
+
+    /* glow color (r, g, b) for every button glow */
+    :root {
+      --glow: 255, 255, 255;
+    }
+
+    /* registered as numbers so they can animate and transition */
+    @property --pulse       { syntax: '<number>'; inherits: true;  initial-value: 0; }
+    @property --array-hover { syntax: '<number>'; inherits: true;  initial-value: 0; }
+    @property --btn-hover   { syntax: '<number>'; inherits: false; initial-value: 0; }
+
+    /* every button has two glows added together:
+       1. array glow: the stronger of --pulse and --array-hover (only set inside a cross)
+       2. its own hover glow, stronger, on top */
+    button {
+      transition: --btn-hover 0.15s, transform 0.08s;
+      box-shadow:
+        0 0 calc(10px * max(var(--pulse), var(--array-hover)))
+            calc(2px * max(var(--pulse), var(--array-hover)))
+            rgba(var(--glow), calc(0.5 * max(var(--pulse), var(--array-hover)))),
+        0 0 calc(16px * var(--btn-hover))
+            calc(4px * var(--btn-hover))
+            rgba(var(--glow), calc(0.9 * var(--btn-hover)));
+    }
+
+    /* individual hover: stronger glow, drawn above neighbours */
+    button:hover:not(:disabled) {
+      --btn-hover: 1;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* mouse down */
+    button:active:not(:disabled) {
+      transform: scale(0.9);
+    }
+
+    /* grayed out: no glow at all */
+    button:disabled {
+      box-shadow: none;
+    }
+
+    /* array glow, steady: while any enabled button in the cross is hovered */
+    .cross {
+      transition: --array-hover 0.15s;
+    }
+
+    .cross:has(button:hover:not(:disabled)) {
+      --array-hover: 1;
+    }
+
+    /* array glow, pulsing: main.js adds the "pulsing" class */
+    .cross.pulsing {
+      animation: arrayPulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes arrayPulse {
+      0%, 100% { --pulse: 0.15; }
+      50%      { --pulse: 1; }
+    }
   </style>
 </head>
 
