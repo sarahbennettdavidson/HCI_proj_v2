@@ -3,7 +3,7 @@
 // face-to-pattern mapping per cube: faceMaps[cube][faceIndex] = pattern index
 //   cube:      0 = left, 1 = right
 //   faceIndex: 0 front, 1 back, 2 top, 3 bottom, 4 right, 5 left
-//   pattern:   0 Checks, 1 Stripes, 2 Dots, 3 WarpedStripes, 4 uvGradient, 5 Flat
+//   pattern:   0 Checks, 1 Stripes, 2 Dots, 3 WarpedStripes, 4 Perlin, 5 Flat
 let faceMaps;
 
 // pattern parameters, one set per pattern (index = pattern index 0..5), sent to the fragment shader
