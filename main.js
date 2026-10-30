@@ -116,7 +116,8 @@ const zRotSpeed = 0;
 
 
 const aspect = canvas.width / canvas.height;
-let proj = ortho(-2.5 * aspect, 2.5 * aspect, -2.5, 2.5, 0.1, 100);
+const orthoSize = 2.5;          // half the view height; half the view width is orthoSize * aspect
+let proj = ortho(-orthoSize * aspect, orthoSize * aspect, -orthoSize, orthoSize, 0.1, 100);
 
 
 let animating = false;   // true while any rotation runs; SPIN and FRONT do nothing then
@@ -126,8 +127,17 @@ function spin() {
     return;
   }
   animating = true;
+  const guided = (guideStep === "spin");      // this click answers the SPIN pulse
+  if (guided) {
+    guideStep = "none";                       // nothing pulses while the cubes spin
+    updatePulse();
+  }
   Promise.all([AnimateRotation(0, 500), AnimateRotation(1, 500)]).then(() => {
     animating = false;
+    if (guided && guideStep === "none") {
+      guideStep = "front";
+      updatePulse();
+    }
   });
 }
 
@@ -136,8 +146,17 @@ function front() {
     return;
   }
   animating = true;
+  const guided = (guideStep === "front");     // this click answers the FRONT pulse
+  if (guided) {
+    guideStep = "none";
+    updatePulse();
+  }
   Promise.all([resetCube(0), resetCube(1)]).then(() => {
     animating = false;
+    if (guided && guideStep === "none") {
+      guideStep = "cross";
+      updatePulse();
+    }
   });
 }
 
@@ -223,7 +242,9 @@ async function scramble() {
   }
   await Promise.all([resetCube(0), resetCube(1)]);
   animating = false;
-  scrambled = true;
+  if (guideStep === "none") {                 // start the guide, unless a pick already skipped it
+    guideStep = "spin";
+  }
   updatePulse();
 }
 
@@ -350,14 +371,21 @@ function setCrossDisabled(cube, disabled) {
   }
 }
 
-// guide pulse: until the first correct match, the cross to pick from next pulses.
-// left after the scramble, the other cross after a first pick, left again after a wrong round.
-let scrambled = false;         // the opening scramble has finished
+// guide pulse, after the opening scramble:
+//   1. SPIN pulses until it's clicked and the spin finishes
+//   2. FRONT pulses until it's clicked and the reset finishes
+//   3. the cross to pick from next pulses, until the first correct match:
+//      left first, the other cross after a first pick, left again after a wrong round
+// a cross pick before steps 1-2 are done skips straight to step 3.
+let guideStep = "none";        // "none" (nothing pulses), "spin", "front" or "cross"
 let guiding = true;            // turned off by the first correct match
 
 function updatePulse() {
+  document.getElementById("spinBtn").classList.toggle("pulsing", guideStep === "spin");
+  document.getElementById("frontBtn").classList.toggle("pulsing", guideStep === "front");
+
   let target = -1;             // cube whose cross pulses, -1 = none
-  if (guiding && scrambled && !resolving && gameState === "playing") {
+  if (guideStep === "cross" && guiding && !resolving && gameState === "playing") {
     if (firstPick === null) {
       target = 0;
     } else {
@@ -434,6 +462,7 @@ function pick(cube, face) {
   if (gameState !== "playing" || resolving) {
     return;
   }
+  guideStep = "cross";                   // a pick ends the SPIN / FRONT part of the guide
   const pattern = faceMaps[cube][face];
 
   if (firstPick === null) {
@@ -503,9 +532,9 @@ function render() {
   //making some variables for the shader color parameters
   setPatternUniforms();
 
-  // background plane behind both cubes, scaled to fill the whole view (x -5..5, y -2.5..2.5)
+  // background plane behind both cubes, scaled from the ortho size so it always fills the whole view
   let planeMatrix = mat4Translate(mat4Identity(), [0, 0, -14]);
-  planeMatrix = mat4Scale(planeMatrix, [2.5 * aspect, 2.5, 1]);
+  planeMatrix = mat4Scale(planeMatrix, [orthoSize * aspect, orthoSize, 1]);
   gl.uniform1i(gl.getUniformLocation(program, "uvPlane"), 1);
   drawShape(planeBuffers, planeMatrix);
   gl.uniform1i(gl.getUniformLocation(program, "uvPlane"), 0);
