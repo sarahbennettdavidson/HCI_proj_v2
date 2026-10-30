@@ -16,6 +16,10 @@ let warpScale;       // 6 floats
 let warpTiling;      // 6 floats
 let flatColor;       // 6 rgb, 0..1 = 18 floats
 
+// page background: one primary or secondary color, picked each load
+const bgColors = ["#ff0000", "#00ff00", "#0000ff", "#00ffff", "#ff00ff", "#ffff00"];   // r, g, b, c, m, y
+let bgColor;
+
 // random float from min up to max
 function randRange(min, max) {
   return min + Math.random() * (max - min);
@@ -38,6 +42,9 @@ function shuffledIndices(n) {
 
 function init() {
   faceMaps = [shuffledIndices(6), shuffledIndices(6)];
+
+  bgColor = bgColors[Math.floor(Math.random() * bgColors.length)];
+  document.body.style.backgroundColor = bgColor;
 
   paletteValues = new Float32Array(6 * 12);
   paletteT      = new Float32Array(6);
