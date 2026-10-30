@@ -115,6 +115,11 @@
       animation: arrayPulse 1.2s ease-in-out infinite;
     }
 
+    /* single button pulsing (SPIN, FRONT): same pulse, main.js adds the "pulsing" class */
+    #controls button.pulsing {
+      animation: arrayPulse 1.2s ease-in-out infinite;
+    }
+
     @keyframes arrayPulse {
       0%, 100% { filter: drop-shadow(0 0 2px rgba(var(--glow), 0.15)); }
       50%      { filter: drop-shadow(0 0 8px rgba(var(--glow), 1)); }
