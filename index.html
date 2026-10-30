@@ -62,12 +62,16 @@
     .cross .base  { grid-column: 2; grid-row: 3; }
 
     /* right column: counters and the 2 x 6 tile grid */
+    /* same height as the canvas (400px + 2px border): the top row lines up with the canvas top,
+       the bottom row with the canvas bottom, the rows in between spread evenly */
     #tiles {
       display: grid;
-      grid-template-columns: repeat(2, 50px);
-      grid-auto-rows: 50px;
-      gap: 20px;
-      margin-top: 10px;
+      grid-template-columns: repeat(2, auto);
+      grid-template-rows: repeat(6, auto);
+      column-gap: 20px;
+      height: 402px;
+      align-content: space-between;
+      justify-content: start;    /* keep the two columns together, not stretched to the text width */
     }
 
     .tile {
@@ -149,8 +153,8 @@
       color: rgb(var(--glow));
     }
 
-    /* the score sits under the tile columns */
-    #scoreLine {
+    /* matches, tries and score sit under the tile columns */
+    #scoreBlock {
       margin-top: 16px;
     }
 
@@ -237,9 +241,6 @@
     </div>
 
     <div id="status">
-      <div class="score">Matches: <span id="matches">0</span></div>
-      <div class="score">Tries Left: <span id="tries">10</span></div>
-
       <div id="tiles">
         <canvas class="tile" id="tile0" width="50" height="50"></canvas>
         <canvas class="tile" id="tile1" width="50" height="50"></canvas>
@@ -255,7 +256,11 @@
         <canvas class="tile" id="tile11" width="50" height="50"></canvas>
       </div>
 
-      <div class="score" id="scoreLine">Score: <span id="score">0</span></div>
+      <div id="scoreBlock">
+        <div class="score">Matches: <span id="matches">0</span></div>
+        <div class="score">Tries Left: <span id="tries">10</span></div>
+        <div class="score">Score: <span id="score">0</span></div>
+      </div>
     </div>
 
   </div>
