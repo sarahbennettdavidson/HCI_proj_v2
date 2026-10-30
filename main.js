@@ -359,6 +359,8 @@ function fadeTile(t, to) {
 
 let tries = 10;
 let matches = 0;                                   // distinct pairs matched so far (kept after wrong answers)
+let score = 0;                                     // 10 points per new match, times the streak multiplier
+let streak = 0;                                    // new matches in a row; a wrong answer resets it to 0
 const matched = [false, false, false, false, false, false];        // pattern index -> matched before
 const showing = [[false, false, false, false, false, false],       // showing[cube][pattern]: tile lit
                  [false, false, false, false, false, false]];
@@ -405,6 +407,7 @@ function updatePulse() {
 function updateScoreboard() {
   document.getElementById("matches").textContent = matches;
   document.getElementById("tries").textContent = tries;
+  document.getElementById("score").textContent = score;
 }
 
 function showTile(cube, pattern) {
@@ -417,30 +420,50 @@ function hideTile(cube, pattern) {
   return fadeTile(tileIndex(cube, pattern), 0);
 }
 
-// "Match!" or "No Match!" over the canvas, white, 1.5 s in total.
-// Match!: pulses bigger 3 times over 1 s at full brightness, then fades out over 0.5 s.
-// No Match!: holds about half a second, then fades out.
-function showResult(text) {
+// text over the canvas, white. Returns the fade animation (its .finished resolves when done).
+// "Match!": 1.5 s, pulses bigger 3 times over 1 s at full brightness, then fades out over 0.5 s.
+// anything else ("Oops!", "Try Again!"): holds for the first 30% of duration, then fades out.
+function showResult(text, duration) {
   const el = document.getElementById("resultText");
   el.textContent = text;
   if (text === "Match!") {
-    el.animate([
-      { opacity: 1, offset: 0 },
-      { opacity: 1, offset: 0.667 },
-      { opacity: 0, offset: 1 }
-    ], { duration: 1500, easing: "ease-in" });
     el.animate([
       { transform: "scale(1)" },
       { transform: "scale(1.3)" },
       { transform: "scale(1)" }
     ], { duration: 1000 / 3, iterations: 3, easing: "ease-in-out" });
-  } else {
-    el.animate([
+    return el.animate([
       { opacity: 1, offset: 0 },
-      { opacity: 1, offset: 0.3 },
+      { opacity: 1, offset: 0.667 },
       { opacity: 0, offset: 1 }
     ], { duration: 1500, easing: "ease-in" });
   }
+  return el.animate([
+    { opacity: 1, offset: 0 },
+    { opacity: 1, offset: 0.3 },
+    { opacity: 0, offset: 1 }
+  ], { duration: duration, easing: "ease-in" });
+}
+
+// "x2", "x3" ... at a random spot in the bottom half of the canvas, floats up 120 px and fades out
+function showMultiplier(n) {
+  const screen = document.getElementById("screen");
+  const el = document.createElement("div");
+  el.className = "multiplier";
+  el.textContent = "x" + n;
+  screen.appendChild(el);
+
+  const w = canvas.width;
+  const h = canvas.height;
+  const x = Math.random() * (w - el.offsetWidth);                       // anywhere across
+  const y = h / 2 + Math.random() * (h / 2 - el.offsetHeight);          // bottom half
+  el.style.left = x + "px";
+  el.style.top = y + "px";
+
+  el.animate([
+    { transform: "translateY(0px)",    opacity: 1 },
+    { transform: "translateY(-120px)", opacity: 0 }
+  ], { duration: 1200, easing: "ease-out" }).finished.then(() => el.remove());
 }
 
 function wait(ms) {
@@ -511,15 +534,21 @@ function pick(cube, face) {
   showTile(cube, pattern);
 
   if (pattern === first.pattern) {
-    showResult("Match!");
+    showResult("Match!", 1500);
     guiding = false;                     // first correct match ends the guide pulse
-    if (!matched[pattern]) {             // new match: costs a try
+    if (!matched[pattern]) {             // new match: costs a try, scores 10 x streak
       matched[pattern] = true;
       matches = matches + 1;
       tries = tries - 1;
-    }                                    // a pair matched before: free
+      streak = streak + 1;
+      score = score + 10 * streak;
+      if (streak >= 2) {
+        showMultiplier(streak);
+      }
+    }                                    // a pair matched before: free, no points, streak unchanged
   } else {
-    showResult("No Match!");
+    showResult("Oops!", 1000).finished.then(() => showResult("Try Again!", 1500));
+    streak = 0;
     tries = tries - 1;
     wrongAnswer(first.cube, first.pattern, cube, pattern);
   }
