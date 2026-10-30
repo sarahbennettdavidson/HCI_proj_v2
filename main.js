@@ -211,6 +211,8 @@ async function scramble() {
   }
   await Promise.all([resetCube(0), resetCube(1)]);
   animating = false;
+  scrambled = true;
+  updatePulse();
 }
 
 document.getElementById("instructions").addEventListener("close", scramble);
@@ -336,6 +338,25 @@ function setCrossDisabled(cube, disabled) {
   }
 }
 
+// guide pulse: until the first correct match, the cross to pick from next pulses.
+// left after the scramble, the other cross after a first pick, left again after a wrong round.
+let scrambled = false;         // the opening scramble has finished
+let guiding = true;            // turned off by the first correct match
+
+function updatePulse() {
+  let target = -1;             // cube whose cross pulses, -1 = none
+  if (guiding && scrambled && !resolving && gameState === "playing") {
+    if (firstPick === null) {
+      target = 0;
+    } else {
+      target = 1 - firstPick.cube;
+    }
+  }
+  for (let c = 0; c < 2; c++) {
+    document.getElementById(crossSides[c] + "Cross").classList.toggle("pulsing", c === target);
+  }
+}
+
 function updateScoreboard() {
   document.getElementById("matches").textContent = matches;
   document.getElementById("tries").textContent = tries;
@@ -393,6 +414,7 @@ async function wrongAnswer(cubeA, patternA, cubeB, patternB) {
   resolving = false;
   setCrossDisabled(0, false);
   setCrossDisabled(1, false);
+  updatePulse();
 }
 
 // a click on a cross button: cube 0 or 1, faceIndex 0..5
@@ -406,6 +428,7 @@ function pick(cube, face) {
     firstPick = { cube: cube, pattern: pattern };
     setCrossDisabled(cube, true);        // this cube is done until the other one is picked
     showTile(cube, pattern);
+    updatePulse();
     return;
   }
 
@@ -416,6 +439,7 @@ function pick(cube, face) {
   showTile(cube, pattern);
 
   if (pattern === first.pattern) {
+    guiding = false;                     // first correct match ends the guide pulse
     if (!matched[pattern]) {             // new match: costs a try
       matched[pattern] = true;
       matches = matches + 1;
@@ -428,6 +452,7 @@ function pick(cube, face) {
 
   updateScoreboard();
   checkWinLose();
+  updatePulse();
 }
 
 for (let cube = 0; cube < 2; cube++) {
