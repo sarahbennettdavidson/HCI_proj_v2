@@ -149,6 +149,20 @@
       color: rgb(var(--glow));
     }
 
+    /* the score sits under the tile columns */
+    #scoreLine {
+      margin-top: 16px;
+    }
+
+    /* "x2", "x3" ... floating up over the canvas: main.js adds one, animates it, then removes it */
+    .multiplier {
+      position: absolute;
+      color: #fff;
+      font-weight: bold;
+      font-size: 60px;
+      pointer-events: none;
+    }
+
     /* keep the instructions popup above the canvas and the text layer */
     #instructions {
       z-index: 10;
@@ -240,6 +254,8 @@
         <canvas class="tile" id="tile10" width="50" height="50"></canvas>
         <canvas class="tile" id="tile11" width="50" height="50"></canvas>
       </div>
+
+      <div class="score" id="scoreLine">Score: <span id="score">0</span></div>
     </div>
 
   </div>
