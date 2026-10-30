@@ -16,9 +16,12 @@ let warpScale;       // 6 floats
 let warpTiling;      // 6 floats
 let flatColor;       // 6 rgb, 0..1 = 18 floats
 
-// page background: one primary or secondary color, picked each load
-const bgColors = ["#ff0000", "#00ff00", "#0000ff", "#00ffff", "#ff00ff", "#ffff00"];   // r, g, b, c, m, y
+// page background: one primary or secondary color, picked each load.
+// button glow: its complement (255 - each channel): red <-> cyan, green <-> magenta, blue <-> yellow
+const bgColors = [[255, 0, 0], [0, 255, 0], [0, 0, 255],        // r, g, b
+                  [0, 255, 255], [255, 0, 255], [255, 255, 0]];  // c, m, y
 let bgColor;
+let glowColor;
 
 // random float from min up to max
 function randRange(min, max) {
@@ -44,7 +47,9 @@ function init() {
   faceMaps = [shuffledIndices(6), shuffledIndices(6)];
 
   bgColor = bgColors[Math.floor(Math.random() * bgColors.length)];
-  document.body.style.backgroundColor = bgColor;
+  glowColor = [255 - bgColor[0], 255 - bgColor[1], 255 - bgColor[2]];
+  document.body.style.backgroundColor = "rgb(" + bgColor.join(", ") + ")";
+  document.documentElement.style.setProperty("--glow", glowColor.join(", "));   // used by the glow CSS
 
   paletteValues = new Float32Array(6 * 12);
   paletteT      = new Float32Array(6);
