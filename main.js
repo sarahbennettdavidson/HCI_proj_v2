@@ -115,6 +115,11 @@ const yRotSpeed = 0;
 const zRotSpeed = 0;
 
 
+// floating: each cube drifts in a small circle, cos in x and sin in y, each with its own phase
+const floatRadius = 0.12;            // world units (a cube is 2 wide)
+const floatSpeed = 1.5;              // radians per second, about 4 s per circle
+const floatPhase = [0, Math.PI];     // per cube: 0 = left, 1 = right
+
 const aspect = canvas.width / canvas.height;
 const orthoSize = 2.5;          // half the view height; half the view width is orthoSize * aspect
 let proj = ortho(-orthoSize * aspect, orthoSize * aspect, -orthoSize, orthoSize, 0.1, 100);
@@ -221,9 +226,9 @@ async function resetCube(cubeIndex) {
   history.length = 0;                                 // everything is undone
 }
 
-// model matrix for one cube: translate by offsetX, then rotate Y, X, Z (T * Ry * Rx * Rz)
-function cubeModelMatrix(offsetX, rot) {
-  let m = mat4Translate(mat4Identity(), [offsetX, 0, 0]);
+// model matrix for one cube: translate to position [x, y, z], then rotate Y, X, Z (T * Ry * Rx * Rz)
+function cubeModelMatrix(position, rot) {
+  let m = mat4Translate(mat4Identity(), position);
   m = mat4RotateY(m, rot[1]);
   m = mat4RotateX(m, rot[0]);
   m = mat4RotateZ(m, rot[2]);
@@ -412,15 +417,30 @@ function hideTile(cube, pattern) {
   return fadeTile(tileIndex(cube, pattern), 0);
 }
 
-// "Match!" or "No Match!" over the canvas: appears at full white, holds, then fades out (1.5 s)
+// "Match!" or "No Match!" over the canvas, white, 1.5 s in total.
+// Match!: pulses bigger 3 times over 1 s at full brightness, then fades out over 0.5 s.
+// No Match!: holds about half a second, then fades out.
 function showResult(text) {
   const el = document.getElementById("resultText");
   el.textContent = text;
-  el.animate([
-    { opacity: 1, offset: 0 },
-    { opacity: 1, offset: 0.3 },
-    { opacity: 0, offset: 1 }
-  ], { duration: 1500, easing: "ease-in" });
+  if (text === "Match!") {
+    el.animate([
+      { opacity: 1, offset: 0 },
+      { opacity: 1, offset: 0.667 },
+      { opacity: 0, offset: 1 }
+    ], { duration: 1500, easing: "ease-in" });
+    el.animate([
+      { transform: "scale(1)" },
+      { transform: "scale(1.3)" },
+      { transform: "scale(1)" }
+    ], { duration: 1000 / 3, iterations: 3, easing: "ease-in-out" });
+  } else {
+    el.animate([
+      { opacity: 1, offset: 0 },
+      { opacity: 1, offset: 0.3 },
+      { opacity: 0, offset: 1 }
+    ], { duration: 1500, easing: "ease-in" });
+  }
 }
 
 function wait(ms) {
@@ -552,12 +572,19 @@ function render() {
   drawShape(planeBuffers, planeMatrix);
   gl.uniform1i(gl.getUniformLocation(program, "uvPlane"), 0);
 
+  // floating offsets: a small circle per cube, cos in x, sin in y
+  const t = deltaTime / 1000;
+  const floatX0 = floatRadius * Math.cos(floatSpeed * t + floatPhase[0]);
+  const floatY0 = floatRadius * Math.sin(floatSpeed * t + floatPhase[0]);
+  const floatX1 = floatRadius * Math.cos(floatSpeed * t + floatPhase[1]);
+  const floatY1 = floatRadius * Math.sin(floatSpeed * t + floatPhase[1]);
+
   // two cubes, offset left and right in x, each with its own rotation and its own face mapping
   const cubeOffsetX = 2.5;
   gl.uniform1iv(gl.getUniformLocation(program, "patternNum"), faceMaps[0]);
-  drawShape(cubeBuffers, cubeModelMatrix(-cubeOffsetX, cubeRots[0]));
+  drawShape(cubeBuffers, cubeModelMatrix([-cubeOffsetX + floatX0, floatY0, 0], cubeRots[0]));
   gl.uniform1iv(gl.getUniformLocation(program, "patternNum"), faceMaps[1]);
-  drawShape(cubeBuffers, cubeModelMatrix( cubeOffsetX, cubeRots[1]));
+  drawShape(cubeBuffers, cubeModelMatrix([ cubeOffsetX + floatX1, floatY1, 0], cubeRots[1]));
 }
 
 // Initialize when page loads
