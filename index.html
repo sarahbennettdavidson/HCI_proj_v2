@@ -81,28 +81,17 @@
       --glow: 255, 255, 255;
     }
 
-    /* registered as numbers so they can animate and transition */
-    @property --pulse       { syntax: '<number>'; inherits: true;  initial-value: 0; }
-    @property --array-hover { syntax: '<number>'; inherits: true;  initial-value: 0; }
-    @property --btn-hover   { syntax: '<number>'; inherits: false; initial-value: 0; }
+    /* two glows that add together:
+       1. individual hover glow: box-shadow on the hovered button
+       2. array glow: drop-shadow filter on the whole cross, around all of its buttons */
 
-    /* every button has two glows added together:
-       1. array glow: the stronger of --pulse and --array-hover (only set inside a cross)
-       2. its own hover glow, stronger, on top */
     button {
-      transition: --btn-hover 0.15s, transform 0.08s;
-      box-shadow:
-        0 0 calc(10px * max(var(--pulse), var(--array-hover)))
-            calc(2px * max(var(--pulse), var(--array-hover)))
-            rgba(var(--glow), calc(0.5 * max(var(--pulse), var(--array-hover)))),
-        0 0 calc(16px * var(--btn-hover))
-            calc(4px * var(--btn-hover))
-            rgba(var(--glow), calc(0.9 * var(--btn-hover)));
+      transition: box-shadow 0.15s, transform 0.08s;
     }
 
-    /* individual hover: stronger glow, drawn above neighbours */
+    /* individual hover: strong glow, drawn above neighbours */
     button:hover:not(:disabled) {
-      --btn-hover: 1;
+      box-shadow: 0 0 16px 4px rgba(var(--glow), 0.9);
       position: relative;
       z-index: 1;
     }
@@ -112,18 +101,13 @@
       transform: scale(0.9);
     }
 
-    /* grayed out: no glow at all */
-    button:disabled {
-      box-shadow: none;
-    }
-
     /* array glow, steady: while any enabled button in the cross is hovered */
     .cross {
-      transition: --array-hover 0.15s;
+      transition: filter 0.15s;
     }
 
     .cross:has(button:hover:not(:disabled)) {
-      --array-hover: 1;
+      filter: drop-shadow(0 0 6px rgba(var(--glow), 0.8));
     }
 
     /* array glow, pulsing: main.js adds the "pulsing" class */
@@ -132,8 +116,8 @@
     }
 
     @keyframes arrayPulse {
-      0%, 100% { --pulse: 0.15; }
-      50%      { --pulse: 1; }
+      0%, 100% { filter: drop-shadow(0 0 2px rgba(var(--glow), 0.15)); }
+      50%      { filter: drop-shadow(0 0 8px rgba(var(--glow), 1)); }
     }
   </style>
 </head>
