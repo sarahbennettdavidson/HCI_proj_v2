@@ -120,9 +120,34 @@
       animation: arrayPulse 1.2s ease-in-out infinite;
     }
 
+    /* two stacked drop-shadows: the second glows around the first, for a stronger, wider pulse */
     @keyframes arrayPulse {
-      0%, 100% { filter: drop-shadow(0 0 2px rgba(var(--glow), 0.15)); }
-      50%      { filter: drop-shadow(0 0 8px rgba(var(--glow), 1)); }
+      0%, 100% { filter: drop-shadow(0 0 3px rgba(var(--glow), 0.3)) drop-shadow(0 0 6px rgba(var(--glow), 0.2)); }
+      50%      { filter: drop-shadow(0 0 8px rgba(var(--glow), 1))   drop-shadow(0 0 18px rgba(var(--glow), 1)); }
+    }
+
+    /* "Match!" / "No Match!" text over the canvas: transparent, clicks pass through,
+       main.js fades it in and out */
+    #screen {
+      position: relative;
+    }
+
+    /* keep the instructions popup above the canvas and the text layer */
+    #instructions {
+      z-index: 10;
+    }
+
+    #resultText {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: bold;
+      font-size: 100px;
+      pointer-events: none;
+      opacity: 0;
     }
   </style>
 </head>
@@ -154,7 +179,10 @@
     </div>
 
     <div id="center">
-      <canvas id="glcanvas" width="800" height="400"></canvas>
+      <div id="screen">
+        <canvas id="glcanvas" width="800" height="400"></canvas>
+        <div id="resultText"></div>
+      </div>
 
       <div id="crosses">
         <div class="cross" id="leftCross">
