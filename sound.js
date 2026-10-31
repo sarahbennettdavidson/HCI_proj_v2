@@ -10,8 +10,11 @@
 //   14 modulation, 15 bitCrush, 16 delay, 17 sustainVolume, 18 decay, 19 tremolo, 20 filter
 
 const sounds = {
-  // any enabled button that is not a cross button: SPIN, FRONT, QUIT, popup buttons
+  // any enabled button that is not a cross button or QUIT: SPIN, FRONT, popup buttons
   click:      [1.6,,89,,,.01,,,-2,21,,,,,129,,,.78,.06], // Random 22
+
+  // QUIT (main.js plays it and reloads the page when it ends)
+  quit:       [.8,,209,,.06,.03,,1.8,,-39,,,,,,,.07,.62,.19,,100], // Random 2
 
   // a cross button (Top, Left, Front, Right, Back, Base)
   crossClick: [.4,,576,.01,.08,.04,,.6,,,-231,.33,,.2,,,.04,.91,.45,,161], // Random 165
@@ -38,10 +41,12 @@ const sounds = {
   lose:       [,,611,.01,.08,.009,,1.9,,,,,,,134,.8,,.95,.22,,178], // Random 142
 };
 
+// plays a sound. returns the playing source (its onended fires when it finishes), or null if the list is empty
 function playSound(name) {
   if (sounds[name].length > 0) {
-    zzfx(...sounds[name]);
+    return zzfx(...sounds[name]);
   }
+  return null;
 }
 
 // a sound that repeats until stopSoundLoop() is called
@@ -68,13 +73,13 @@ document.addEventListener("pointerdown", () => {
   }
 });
 
-// any press of an enabled button: cross buttons have their own sound
+// any press of an enabled button: cross buttons have their own sound, QUIT plays its own from main.js
 document.addEventListener("pointerdown", e => {
   const button = e.target.closest("button");
   if (button && !button.disabled) {
     if (button.closest(".cross")) {
       playSound("crossClick");
-    } else {
+    } else if (button.id !== "quitBtn") {
       playSound("click");
     }
   }
