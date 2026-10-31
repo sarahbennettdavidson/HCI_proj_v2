@@ -14,7 +14,7 @@ const sounds = {
   click:      [1.6,,89,,,.01,,,-2,21,,,,,129,,,.78,.06], // Random 22
 
   // QUIT (main.js plays it and reloads the page when it ends)
-  quit:       [.8,,209,,.06,.03,,1.8,,-39,,,,,,,.07,.62,.19,,100], // Random 2
+  quit:       [4.8,,336,,.02,.14,3,2.6,-36,,-125,.12,.01,.1,,.7,.21,.87,.01,,-1009], // Random 82
 
   // a cross button (Top, Left, Front, Right, Back, Base)
   crossClick: [.4,,576,.01,.08,.04,,.6,,,-231,.33,,.2,,,.04,.91,.45,,161], // Random 165
@@ -23,7 +23,7 @@ const sounds = {
   spin:       [1.9,,137,,.11,.02,1,2.3,,,-43,.09,.04,,,,.03,.87,.02,.18], // Random 145
 
   // each rotation step back to the front: FRONT, and after the scramble
-  reset:      [2.1,,50,.03,.35,.01,1,.4,,,20,,,,,,.12,.59,.01,,-1367], // Random 252
+  reset:      [2,,9,.04,.03,.03,,2.5,-5,34,124,.04,.01,,,,.23,.59,.12], // Random 235
 
   // Match!
   match:      [,,877,.01,.08,.36,,1.3,,,300,.06,,,,,,.94,.05], // Random 110
