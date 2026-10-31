@@ -141,7 +141,11 @@ function spin() {
   Promise.all([AnimateRotation(0, 500), AnimateRotation(1, 500)]).then(() => {
     animating = false;
     if (guided && guideStep === "none") {
-      guideStep = "front";
+      if (gameMode === "diabolical") {
+        guideStep = "cross";                  // FRONT is disabled in diabolical: skip its pulse
+      } else {
+        guideStep = "front";
+      }
       updatePulse();
     }
   });
@@ -260,7 +264,30 @@ async function scramble() {
   updatePulse();
 }
 
-document.getElementById("instructions").addEventListener("close", scramble);
+// game mode, picked with a button in the instructions popup:
+//   "normal"
+//   "zen":        no losing. when every pair is matched, score, matches and streak are kept,
+//                 the patterns are replaced with new random ones, tries refill to 10,
+//                 and the cubes shuffle again, so play can go on forever
+//   "diabolical": FRONT is disabled
+let gameMode = "normal";
+
+function startGame() {
+  const choice = document.getElementById("instructions").returnValue;
+  if (choice === "zen" || choice === "diabolical") {
+    gameMode = choice;
+  }
+  if (gameMode === "diabolical") {
+    document.getElementById("frontBtn").disabled = true;
+  }
+  scramble();
+}
+
+document.getElementById("instructions").addEventListener("close", startGame);
+
+// QUIT and HOME: reload the page, back to the opening popup with everything new
+document.getElementById("quitBtn").addEventListener("click", () => location.reload());
+document.getElementById("homeBtn").addEventListener("click", () => location.reload());
 
 // pattern parameters from init.js (one set per pattern), sent to the fragment shader
 function setPatternUniforms() {
@@ -478,6 +505,8 @@ function wait(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// win: every pair matched and showing. lose: no tries left (never in zen mode).
+// the end popup opens after 1.5 s, once Match! or Oops! has played.
 function checkWinLose() {
   let allShowing = true;
   for (let p = 0; p < 6; p++) {
@@ -486,9 +515,67 @@ function checkWinLose() {
     }
   }
   if (allShowing) {
-    gameState = "won";
-  } else if (tries <= 0) {
+    if (gameMode === "zen") {
+      zenNewRound();
+    } else {
+      gameState = "won";
+      showEnd("You Win!!!", 1500);
+    }
+  } else if (tries <= 0 && gameMode !== "zen") {
     gameState = "lost";
+    showEnd("Sorry, maybe next time!", 1500);
+  }
+}
+
+// opens the end popup with a title and the final score, after delay ms
+async function showEnd(title, delay) {
+  await wait(delay);
+  document.getElementById("endTitle").textContent = title;
+  document.getElementById("endScore").textContent = "Score: " + score;
+  document.getElementById("endDialog").showModal();
+}
+
+// zen mode, every pair matched: keep score, matches and streak; fade the tiles out,
+// make new patterns, refill tries, and shuffle the cubes again
+async function zenNewRound() {
+  resolving = true;                      // no picks until the new round is ready
+  setCrossDisabled(0, true);
+  setCrossDisabled(1, true);
+
+  await wait(1500);                      // let Match! play with every tile showing
+  while (animating) {                    // let a spin or reset that is running finish first
+    await wait(50);
+  }
+  animating = true;                      // SPIN and FRONT do nothing from here until the shuffle ends
+
+  const fades = [];
+  for (let c = 0; c < 2; c++) {
+    for (let p = 0; p < 6; p++) {
+      fades.push(hideTile(c, p));
+    }
+  }
+  await Promise.all(fades);
+
+  newPatterns();                         // init.js: new face mappings and pattern parameters
+  drawTiles();                           // new pattern images for the tiles, tiles black
+  for (let p = 0; p < 6; p++) {
+    matched[p] = false;
+  }
+  tries = 10;
+  updateScoreboard();
+
+  await scramble();                      // 3 random turns, then back to the front
+
+  resolving = false;
+  setCrossDisabled(0, false);
+  setCrossDisabled(1, false);
+  updatePulse();
+}
+
+// one try used. tries stop at 0 (in zen mode running out does not lose)
+function useTry() {
+  if (tries > 0) {
+    tries = tries - 1;
   }
 }
 
@@ -548,23 +635,28 @@ function pick(cube, face) {
     if (!matched[pattern]) {             // new match: costs a try, scores 10 x streak
       matched[pattern] = true;
       matches = matches + 1;
-      tries = tries - 1;
+      useTry();
       streak = streak + 1;
       score = score + 10 * streak;
       if (streak >= 2) {
         showMultiplier(streak);
       }
     }                                    // a pair matched before: free, no points, streak unchanged
+    updateScoreboard();
+    checkWinLose();
   } else {
-    showResult("Oops!", 1000).finished.then(() => showResult("Try Again!", 1500));
-    playSound("oops");
     streak = 0;
-    tries = tries - 1;
+    useTry();
+    updateScoreboard();
+    checkWinLose();
+    playSound("oops");
+    const oops = showResult("Oops!", 1000);
+    if (gameState === "playing") {       // no "Try Again!" after the last try
+      oops.finished.then(() => showResult("Try Again!", 1500));
+    }
     wrongAnswer(first.cube, first.pattern, cube, pattern);
   }
 
-  updateScoreboard();
-  checkWinLose();
   updatePulse();
 }
 
