@@ -15,7 +15,7 @@
 const sounds = {
   click:      [1, 0, 880,  0, .1, .1],   // any enabled button pressed
   spin:       [1, 0, 330,  0, .1, .1],   // cubes start a spin: SPIN, and each turn of the opening scramble
-  reset:      [1, 0, 262,  0, .1, .1],   // cubes start going back to the front: FRONT, and after the scramble
+  reset:      [1, 0, 262,  0, .1, .1],   // each rotation step back to the front: FRONT, and after the scramble
   match:      [1, 0, 659,  0, .1, .1],   // Match!
   oops:       [1, 0, 196,  0, .1, .1],   // Oops! (wrong answer)
   multiplier: [1, 0, 1047, 0, .1, .1],   // x2, x3 ... appears
