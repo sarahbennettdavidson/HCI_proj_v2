@@ -285,8 +285,16 @@ function startGame() {
 
 document.getElementById("instructions").addEventListener("close", startGame);
 
-// QUIT and HOME: reload the page, back to the opening popup with everything new
-document.getElementById("quitBtn").addEventListener("click", () => location.reload());
+// QUIT and HOME: reload the page, back to the opening popup with everything new.
+// QUIT plays its sound first and reloads when the sound ends, so the reload does not cut it off
+document.getElementById("quitBtn").addEventListener("click", () => {
+  const source = playSound("quit");
+  if (source !== null) {
+    source.onended = () => location.reload();
+  } else {
+    location.reload();
+  }
+});
 document.getElementById("homeBtn").addEventListener("click", () => location.reload());
 
 // pattern parameters from init.js (one set per pattern), sent to the fragment shader
