@@ -137,6 +137,7 @@ function spin() {
     guideStep = "none";                       // nothing pulses while the cubes spin
     updatePulse();
   }
+  playSound("spin");
   Promise.all([AnimateRotation(0, 500), AnimateRotation(1, 500)]).then(() => {
     animating = false;
     if (guided && guideStep === "none") {
@@ -156,6 +157,7 @@ function front() {
     guideStep = "none";
     updatePulse();
   }
+  playSound("reset");
   Promise.all([resetCube(0), resetCube(1)]).then(() => {
     animating = false;
     if (guided && guideStep === "none") {
@@ -243,8 +245,10 @@ document.getElementById("frontBtn").addEventListener("click", front);
 async function scramble() {
   animating = true;
   for (let i = 0; i < 3; i++) {
+    playSound("spin");
     await Promise.all([AnimateRotation(0, 250), AnimateRotation(1, 250)]);
   }
+  playSound("reset");
   await Promise.all([resetCube(0), resetCube(1)]);
   animating = false;
   if (guideStep === "none") {                 // start the guide, unless a pick already skipped it
@@ -452,6 +456,7 @@ function showMultiplier(n) {
   el.className = "multiplier";
   el.textContent = "x" + n;
   screen.appendChild(el);
+  playSound("multiplier");
 
   const w = canvas.width;
   const h = canvas.height;
@@ -535,6 +540,7 @@ function pick(cube, face) {
 
   if (pattern === first.pattern) {
     showResult("Match!", 1500);
+    playSound("match");
     guiding = false;                     // first correct match ends the guide pulse
     if (!matched[pattern]) {             // new match: costs a try, scores 10 x streak
       matched[pattern] = true;
@@ -548,6 +554,7 @@ function pick(cube, face) {
     }                                    // a pair matched before: free, no points, streak unchanged
   } else {
     showResult("Oops!", 1000).finished.then(() => showResult("Try Again!", 1500));
+    playSound("oops");
     streak = 0;
     tries = tries - 1;
     wrongAnswer(first.cube, first.pattern, cube, pattern);
