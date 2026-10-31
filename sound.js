@@ -17,16 +17,16 @@ const sounds = {
   crossClick: [1.1,,267,,.01,.07,2,.7,3,9,154,.06,.01,,,,.01,.8,.05,,-632], // Random 39
 
   // cubes start a spin: SPIN, and each turn of the opening scramble
-  spin:       [1.7,,564,.28,.12,.005,1,1.3,,,141,.41,.1,.1,.7,,.13,.8,.07,.17], // Random 19
+  spin:       [1.2,,525,.43,.01,.07,1,,-1,,,,.05,,,,.35,.78,.16,.33,229], // Random 219
 
   // each rotation step back to the front: FRONT, and after the scramble
-  reset:      [,,390,.08,.06,.006,1,2,,,123,.41,,.1,,.9,,.9,.44,.26], // Random 14
+  reset:      [.5,,38,.48,,.09,3,3.3,,6,-168,.2,.06,,62,,,.58,,.02,102], // Random 187
 
   // Match!
   match:      [,,877,.01,.08,.36,,1.3,,,300,.06,,,,,,.94,.05], // Random 110
 
   // Oops! (match missed)
-  oops:       [,,390,.08,.06,.006,1,2,,,123,.41,,.1,,.9,,.9,.44,.26], // Random 14
+  oops:       [,,351,.07,.19,.02,,.6,,,,,,,88,,,.5,.35], // Random 122
 
   // x2, x3 ... appears
   multiplier: [1, 0, 1047, 0, .1, .1],
