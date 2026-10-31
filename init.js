@@ -44,12 +44,17 @@ function shuffledIndices(n) {
 }
 
 function init() {
-  faceMaps = [shuffledIndices(6), shuffledIndices(6)];
-
   bgColor = bgColors[Math.floor(Math.random() * bgColors.length)];
   glowColor = [255 - bgColor[0], 255 - bgColor[1], 255 - bgColor[2]];
   document.body.style.backgroundColor = "rgb(" + bgColor.join(", ") + ")";
   document.documentElement.style.setProperty("--glow", glowColor.join(", "));   // used by the glow CSS
+
+  newPatterns();
+}
+
+// new random face mappings and pattern parameters. called by init(), and by zen mode for each new round
+function newPatterns() {
+  faceMaps = [shuffledIndices(6), shuffledIndices(6)];
 
   paletteValues = new Float32Array(6 * 12);
   paletteT      = new Float32Array(6);
