@@ -519,21 +519,30 @@ function checkWinLose() {
       zenNewRound();
     } else {
       gameState = "won";
-      showEnd("You Win!!!", 1500);
+      showEnd("You Win!!!", 1500, "win");
     }
   } else if (tries <= 0 && gameMode !== "zen") {
     gameState = "lost";
-    showEnd("Sorry, maybe next time!", 1500);
+    showEnd("Sorry, maybe next time!", 1500, "lose");
   }
 }
 
-// opens the end popup with a title and the final score, after delay ms
-async function showEnd(title, delay) {
+// opens the end popup with a title and the final score, after delay ms.
+// sound: "win" loops while the popup is up, "lose" plays once
+async function showEnd(title, delay, sound) {
   await wait(delay);
   document.getElementById("endTitle").textContent = title;
   document.getElementById("endScore").textContent = "Score: " + score;
   document.getElementById("endDialog").showModal();
+  if (sound === "win") {
+    playSoundLoop("win");
+  } else {
+    playSound(sound);
+  }
 }
+
+// the win loop stops if the popup is closed some other way than HOME (Esc closes it)
+document.getElementById("endDialog").addEventListener("close", stopSoundLoop);
 
 // zen mode, every pair matched: keep score, matches and streak; fade the tiles out,
 // make new patterns, refill tries, and shuffle the cubes again
