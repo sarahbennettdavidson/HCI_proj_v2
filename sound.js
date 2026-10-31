@@ -17,7 +17,7 @@ const sounds = {
   crossClick: [,,291,.01,,.14,,3.3,,11,25,.07,,,,.1,,.85,.07,,261], // Random 190
 
   // cubes start a spin: SPIN, and each turn of the opening scramble
-  spin:       [1.8,,278,,.04,.21,,3.1,-18,3,-16,.05,.03,.1,100,,.11,.84,.06], // Random 77
+  spin:       [1.9,,137,,.11,.02,1,2.3,,,-43,.09,.04,,,,.03,.87,.02,.18], // Random 145
 
   // each rotation step back to the front: FRONT, and after the scramble
   reset:      [1.8,,114,,.03,.36,3,1.6,,,,,,,,.3,.01,.51,.04,.39], // Random 218
