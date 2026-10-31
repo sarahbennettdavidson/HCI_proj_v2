@@ -21,11 +21,22 @@
       align-items: flex-start;
     }
 
-    /* left column: SPIN, FRONT */
+    /* left column: SPIN and FRONT in a block as tall as the canvas (400px + 2px border),
+       then QUIT, 16px below it: the same height as the matches / tries / score text on the right */
     #controls {
       display: flex;
       flex-direction: column;
+    }
+
+    #topControls {
+      display: flex;
+      flex-direction: column;
       gap: 20px;
+      height: 402px;
+    }
+
+    #quitBtn {
+      margin-top: 16px;          /* same as #scoreBlock's margin-top */
     }
 
     #controls button {
@@ -190,7 +201,8 @@
 <body>
   <h2>Cube Match Game!</h2>
 
-  <!-- instructions popup: open on load, OK closes it (no JS needed) -->
+  <!-- instructions popup: open on load. each mode button closes it (no JS needed);
+       main.js reads which one was pressed from the dialog's returnValue -->
   <dialog id="instructions" open>
     Cube faces are scrambled!<br>
 
@@ -202,15 +214,27 @@
       When you run out of tries, you lose!.</p>
 
     <form method="dialog">
-      <button>OK</button>
+      <button value="normal">NORMAL</button>
+      <button value="zen">ZEN</button>
+      <button value="diabolical">DIABOLICAL</button>
     </form>
+  </dialog>
+
+  <!-- end popup: main.js fills in the text and opens it on a win or a loss. HOME reloads the page -->
+  <dialog id="endDialog">
+    <p id="endTitle"></p>
+    <p id="endScore"></p>
+    <button id="homeBtn">HOME</button>
   </dialog>
 
   <div id="layout">
 
     <div id="controls">
-      <button id="spinBtn">SPIN</button>
-      <button id="frontBtn">FRONT</button>
+      <div id="topControls">
+        <button id="spinBtn">SPIN</button>
+        <button id="frontBtn">FRONT</button>
+      </div>
+      <button id="quitBtn">QUIT</button>
     </div>
 
     <div id="center">
