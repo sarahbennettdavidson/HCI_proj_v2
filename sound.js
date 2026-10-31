@@ -14,13 +14,13 @@ const sounds = {
   click:      [1.6,,89,,,.01,,,-2,21,,,,,129,,,.78,.06], // Random 22
 
   // a cross button (Top, Left, Front, Right, Back, Base)
-  crossClick: [1.1,,267,,.01,.07,2,.7,3,9,154,.06,.01,,,,.01,.8,.05,,-632], // Random 39
+  crossClick: [,,291,.01,,.14,,3.3,,11,25,.07,,,,.1,,.85,.07,,261], // Random 190
 
   // cubes start a spin: SPIN, and each turn of the opening scramble
-  spin:       [1.2,,525,.43,.01,.07,1,,-1,,,,.05,,,,.35,.78,.16,.33,229], // Random 219
+  spin:       [2,,997,.39,,.007,2,1.3,,,,,,,,.3,.47,.93,.03], // Random 57
 
   // each rotation step back to the front: FRONT, and after the scramble
-  reset:      [.5,,38,.48,,.09,3,3.3,,6,-168,.2,.06,,62,,,.58,,.02,102], // Random 187
+  reset:      [1.8,,114,,.03,.36,3,1.6,,,,,,,,.3,.01,.51,.04,.39], // Random 218
 
   // Match!
   match:      [,,877,.01,.08,.36,,1.3,,,300,.06,,,,,,.94,.05], // Random 110
