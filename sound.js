@@ -1,9 +1,7 @@
 // sound.js: which sound plays when. Uses ZzFX (ZzFXMicro.js, loaded before this file).
 // https://github.com/KilledByAPixel/ZzFX
 //
-// for now every sound is a plain sine tone, 0.2 s, each at its own frequency.
-// replace a list with your own zzfx parameters (for example from the ZzFX sound designer).
-// an empty list plays nothing.
+// each list is zzfx parameters (for example from the ZzFX sound designer). an empty list plays nothing.
 //
 // parameter order (empty = default):
 //   0 volume, 1 randomness, 2 frequency, 3 attack, 4 sustain, 5 release,
@@ -11,20 +9,55 @@
 //   8 slide, 9 deltaSlide, 10 pitchJump, 11 pitchJumpTime, 12 repeatTime, 13 noise,
 //   14 modulation, 15 bitCrush, 16 delay, 17 sustainVolume, 18 decay, 19 tremolo, 20 filter
 
-//                 volume, randomness, frequency, attack, sustain, release
 const sounds = {
-  click:      [1, 0, 880,  0, .1, .1],   // any enabled button pressed
-  spin:       [.6,,950,.09,.01,.17,5,1.512854044655257,,,-321,.16,,,,,.07,.92,.02,,519], // Random 13
-                                         // cubes start a spin: SPIN, and each turn of the opening scramble
-  reset:      [1, 0, 262,  0, .1, .1],   // each rotation step back to the front: FRONT, and after the scramble
-  match:      [1, 0, 659,  0, .1, .1],   // Match!
-  oops:       [1, 0, 196,  0, .1, .1],   // Oops! (wrong answer)
-  multiplier: [1, 0, 1047, 0, .1, .1],   // x2, x3 ... appears
+  // any enabled button that is not a cross button: SPIN, FRONT, QUIT, popup buttons
+  click:      [1.6,,89,,,.01,,,-2,21,,,,,129,,,.78,.06], // Random 22
+
+  // a cross button (Top, Left, Front, Right, Back, Base)
+  crossClick: [1.1,,267,,.01,.07,2,.7,3,9,154,.06,.01,,,,.01,.8,.05,,-632], // Random 39
+
+  // cubes start a spin: SPIN, and each turn of the opening scramble
+  spin:       [1.7,,564,.28,.12,.005,1,1.3,,,141,.41,.1,.1,.7,,.13,.8,.07,.17], // Random 19
+
+  // each rotation step back to the front: FRONT, and after the scramble
+  reset:      [,,390,.08,.06,.006,1,2,,,123,.41,,.1,,.9,,.9,.44,.26], // Random 14
+
+  // Match!
+  match:      [,,877,.01,.08,.36,,1.3,,,300,.06,,,,,,.94,.05], // Random 110
+
+  // Oops! (match missed)
+  oops:       [,,390,.08,.06,.006,1,2,,,123,.41,,.1,,.9,,.9,.44,.26], // Random 14
+
+  // x2, x3 ... appears
+  multiplier: [1, 0, 1047, 0, .1, .1],
+
+  // loops while the win popup is up
+  win:        [5,,62,.38,.11,,1,1.8,,2,120,,.1,,,.2,,.63,.15,,-683], // Random 121
+
+  // once, when the lose popup appears
+  lose:       [,,611,.01,.08,.009,,1.9,,,,,,,134,.8,,.95,.22,,178], // Random 142
 };
 
 function playSound(name) {
   if (sounds[name].length > 0) {
     zzfx(...sounds[name]);
+  }
+}
+
+// a sound that repeats until stopSoundLoop() is called
+let loopSource = null;
+
+function playSoundLoop(name) {
+  if (sounds[name].length > 0) {
+    loopSource = zzfx(...sounds[name]);   // zzfx returns the playing source
+    loopSource.loop = true;
+  }
+}
+
+function stopSoundLoop() {
+  if (loopSource !== null) {
+    loopSource.stop();
+    loopSource = null;
   }
 }
 
@@ -35,10 +68,14 @@ document.addEventListener("pointerdown", () => {
   }
 });
 
-// any press of an enabled button
+// any press of an enabled button: cross buttons have their own sound
 document.addEventListener("pointerdown", e => {
   const button = e.target.closest("button");
   if (button && !button.disabled) {
-    playSound("click");
+    if (button.closest(".cross")) {
+      playSound("crossClick");
+    } else {
+      playSound("click");
+    }
   }
 });
