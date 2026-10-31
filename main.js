@@ -157,8 +157,7 @@ function front() {
     guideStep = "none";
     updatePulse();
   }
-  playSound("reset");
-  Promise.all([resetCube(0), resetCube(1)]).then(() => {
+  Promise.all([resetCube(0, true), resetCube(1, false)]).then(() => {
     animating = false;
     if (guided && guideStep === "none") {
       guideStep = "cross";
@@ -218,11 +217,16 @@ function AnimateRotation(cubeIndex, duration, axis) {
 
 // undoes one cube's rotations, newest first, each with the inverse axis, so it ends back at the front.
 // each step takes 150 ms, however many rotations there are.
-async function resetCube(cubeIndex) {
+// withSound: play the reset sound on each step. Both cubes always undo the same number of steps
+// at the same time, so only one of the two calls passes true, or every sound would play twice.
+async function resetCube(cubeIndex, withSound) {
   const history = rotations[cubeIndex];
   const duration = 150;
   for (let i = history.length - 1; i >= 0; i--) {
     const inverse = [-history[i][0], -history[i][1], -history[i][2]];
+    if (withSound) {
+      playSound("reset");
+    }
     await AnimateRotation(cubeIndex, duration, inverse);
   }
   history.length = 0;                                 // everything is undone
@@ -248,8 +252,7 @@ async function scramble() {
     playSound("spin");
     await Promise.all([AnimateRotation(0, 250), AnimateRotation(1, 250)]);
   }
-  playSound("reset");
-  await Promise.all([resetCube(0), resetCube(1)]);
+  await Promise.all([resetCube(0, true), resetCube(1, false)]);
   animating = false;
   if (guideStep === "none") {                 // start the guide, unless a pick already skipped it
     guideStep = "spin";
